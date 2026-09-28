@@ -3,67 +3,27 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chamados — HelpTI</title>
+<title>Feed — HelpTI</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
-    .top-nav-tabs {
-        display: flex;
-        gap: 12px;
-        margin-bottom: 20px;
-        border-bottom: 1px solid var(--border);
-        padding-bottom: 12px;
-    }
-    .top-tab-btn {
-        background: transparent;
-        border: none;
-        color: var(--text-dim);
-        font-weight: 500;
-        font-size: 0.95rem;
-        cursor: pointer;
-        padding: 6px 12px;
-        border-radius: 6px;
-        transition: 0.15s;
-    }
-    .top-tab-btn.ativo {
-        background: var(--surface-alt) !important;
-        color: var(--accent) !important;
-        border: 1px solid var(--border) !important;
-        font-weight: 600;
-    }
-    .top-tab-btn:hover {
-        color: var(--accent);
-    }
     body { padding-bottom: 70px !important; }
-    .bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background-color: #17212B;
-        border-top: 1px solid #263340;
-        display: flex;
-        justify-content: space-around;
-        padding: 10px 0;
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
-        z-index: 1000;
-    }
-    .bottom-nav .nav-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-decoration: none;
-        color: #8695A7;
-        font-size: 11px;
-    }
-    .bottom-nav .nav-item.active,
-    .bottom-nav .nav-item:hover {
-        color: #4FD1C5;
-    }
-    .bottom-nav .nav-item i {
-        font-size: 18px;
-        margin-bottom: 4px;
-    }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #17212B; border-top: 1px solid #263340; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+    .bottom-nav .nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8695A7; font-size: 11px; }
+    .bottom-nav .nav-item.active { color: #4FD1C5; }
+    .bottom-nav .nav-item i { font-size: 18px; margin-bottom: 4px; }
+    
+    /* Visual dos chamados no Feed */
+    .chamado-card { background: var(--surface, #1C2733); border: 1px solid var(--border, #263340); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+    .ticket-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
+    .status-aberto { background: rgba(79, 209, 197, 0.2); color: #4FD1C5; }
+    .status-em_negociacao { background: rgba(246, 173, 85, 0.2); color: #F6AD55; }
+    .status-resolvido { background: rgba(104, 211, 145, 0.2); color: #68D391; }
+    
+    /* Estilo do botão de Chat */
+    .btn-chat { background: var(--accent, #4FD1C5); color: #17212B; padding: 8px 15px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: bold; transition: 0.2s; }
+    .btn-chat:hover { opacity: 0.9; }
 </style>
 </head>
 <body>
@@ -71,203 +31,118 @@
 <div class="topbar">
   <div class="logo"><span class="dot"></span> HelpTI</div>
   <div class="user-info">
-    <span id="nome-usuario">A carregar...</span>
-    <span class="badge-tipo" id="badge-tipo" style="text-transform: capitalize; margin-left: 6px; font-size: 0.8rem; background: var(--surface-alt); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border);">—</span>
-    <button class="btn-sair" id="btn-sair" style="margin-left: 10px;">Sair</button>
+    <span id="nome-usuario" style="font-weight: bold; color: var(--accent);">Carregando...</span>
+    <span class="badge-tipo" id="badge-tipo" style="margin-left: 6px; font-size: 0.8rem; background: var(--surface-alt); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border); text-transform: capitalize;">—</span>
   </div>
 </div>
 
-<div class="feed-container">
-  <div class="feed-header">
-    <div>
-      <h2>Quadro de chamados</h2>
-      <p class="sub" id="subtitulo-feed">A carregar chamados...</p>
-    </div>
-  </div>
-
-  <div class="painel-nova" id="painel-nova" style="display:none;">
-    <h3 style="margin-bottom:14px;">Abrir novo chamado</h3>
-    <form id="form-nova-demanda">
-      <div class="campo">
-        <label for="titulo">Título</label>
-        <input type="text" id="titulo" required placeholder="Ex: Notebook não liga após atualização">
-      </div>
-      <div class="campo">
-        <label for="descricao">Descreva o problema</label>
-        <textarea id="descricao" rows="3" required placeholder="Quanto mais detalhe, mais rápido um técnico entende o problema."></textarea>
-      </div>
-      <div class="linha-2">
-        <div class="campo">
-          <label for="categoria">Categoria</label>
-          <select id="categoria">
-            <option value="hardware">🖥️ Hardware</option>
-            <option value="software">💻 Software</option>
-          </select>
-        </div>
-        <div class="campo" style="display:flex; align-items:flex-end;">
-          <button type="submit" class="btn-primario" id="btn-publicar" style="width:100%;">Publicar chamado</button>
-        </div>
-      </div>
+<div class="feed-container" style="padding: 20px; max-width: 800px; margin: 60px auto 0;">
+  
+  <!-- Painel de Criar Chamado (Aparece SÓ para Clientes) -->
+  <div id="painel-criar-chamado" style="display: none; background: var(--surface-alt, #263340); padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid var(--border);">
+    <h3 style="margin-top:0;">Abrir novo chamado</h3>
+    <form id="form-chamado" style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
+       <input type="text" id="titulo" placeholder="Resumo do problema (Ex: PC não liga)" required style="padding: 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: white;">
+       <textarea id="descricao" placeholder="Descreva os detalhes..." required rows="3" style="padding: 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: white; resize: vertical;"></textarea>
+       <select id="categoria" required style="padding: 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: white;">
+         <option value="hardware">Equipamento (Hardware)</option>
+         <option value="software">Sistema/Programas (Software)</option>
+       </select>
+       <button type="submit" class="btn-primario" style="padding: 12px; background: var(--accent); color: #17212B; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 1rem;">Publicar chamado</button>
     </form>
   </div>
 
-  <div class="top-nav-tabs">
-    <button class="top-tab-btn ativo" data-aba="todos">Todos os Chamados</button>
-    <button class="top-tab-btn" data-aba="meus">Meus Chamados</button>
-    <button class="top-tab-btn" data-aba="abertos">Chamados em Aberto</button>
+  <h2>Mural de Chamados</h2>
+  <div id="lista-chamados" style="margin-top: 15px;">
+    <p style="color: #8695A7;">Carregando chamados...</p>
   </div>
 
-  <div id="lista-demandas"></div>
 </div>
 
 <nav class="bottom-nav">
-    <a href="feed.html" class="nav-item active">
-        <i class="fas fa-home"></i>
-        <span>Início</span>
-    </a>
-    <a href="chat.html" class="nav-item">
-        <i class="fas fa-comments"></i>
-        <span>Chat</span>
-    </a>
-    <a href="notificacoes.html" class="nav-item">
-        <i class="fas fa-bell"></i>
-        <span>Notificações</span>
-    </a>
-    <a href="perfil.html" class="nav-item">
-        <i class="fas fa-user"></i>
-        <span>Perfil</span>
-    </a>
+    <a href="feed.html" class="nav-item active"><i class="fas fa-home"></i><span>Início</span></a>
+    <a href="chat.html" class="nav-item"><i class="fas fa-comments"></i><span>Chat</span></a>
+    <a href="perfil.html" class="nav-item"><i class="fas fa-user"></i><span>Perfil</span></a>
 </nav>
 
 <script type="module">
-  import { exigirLogin, logoutUsuario } from "./js/auth.js";
-  import { escutarDemandas, assumirDemanda, LABEL_STATUS, LABEL_CATEGORIA, criarDemanda } from "./js/demandas.js";
+    import { exigirLogin } from "./js/auth.js";
+    import { escutarDemandas, criarDemanda, LABEL_STATUS, LABEL_CATEGORIA } from "./js/demandas.js";
 
-  document.getElementById("btn-sair").addEventListener("click", logoutUsuario);
+    let meuPerfil = null;
+    let meuId = null;
 
-  let usuarioAtual = null;
-  let perfilAtual = null;
-  let abaAtiva = "todos";
-  let todasDemandas = [];
+    exigirLogin((user, perfil) => {
+        meuPerfil = perfil;
+        meuId = user.uid;
 
-  exigirLogin((user, perfil) => {
-    usuarioAtual = user;
-    perfilAtual = perfil;
+        // Se for cliente, exibe a caixa de abrir chamado. Técnicos não veem isso.
+        if (perfil.tipo === "cliente") {
+            document.getElementById("painel-criar-chamado").style.display = "block";
+        }
 
-    document.getElementById("nome-usuario").textContent = perfil?.nome || user.email;
-    document.getElementById("badge-tipo").textContent = perfil?.tipo || "cliente";
+        // Carrega os chamados do banco de dados e desenha na tela
+        escutarDemandas((chamados) => {
+            const listaDiv = document.getElementById("lista-chamados");
+            listaDiv.innerHTML = ""; // Limpa a tela antes de desenhar
 
-    if (perfil?.tipo === "cliente") {
-      document.getElementById("painel-nova").style.display = "block";
-      document.getElementById("subtitulo-feed").textContent = "Os seus chamados publicados e o andamento de cada um.";
-    } else {
-      document.getElementById("subtitulo-feed").textContent = "Chamados abertos aguardando um técnico, e os que você já assumiu.";
-    }
+            if (chamados.length === 0) {
+                listaDiv.innerHTML = "<p style='color: #8695A7; text-align: center; padding: 20px;'>Nenhum chamado aberto no momento.</p>";
+                return;
+            }
 
-    escutarDemandas((lista) => {
-      todasDemandas = lista;
-      renderizar();
-    });
-  });
+            chamados.forEach(chamado => {
+                const div = document.createElement("div");
+                div.className = "chamado-card";
+                
+                // O BOTÃO DE ABRIR CHAT QUE PASSA O ID AUTOMATICAMENTE
+                const btnChat = `<a href="chat.html?id=${chamado.id}" class="btn-chat"><i class="fas fa-comments"></i> Abrir Chat</a>`;
 
-  document.getElementById("form-nova-demanda").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById("btn-publicar");
-    btn.disabled = true;
-    btn.textContent = "A publicar...";
-    try {
-      await criarDemanda({
-        titulo: document.getElementById("titulo").value.trim(),
-        descricao: document.getElementById("descricao").value.trim(),
-        categoria: document.getElementById("categoria").value,
-        clienteId: usuarioAtual.uid,
-        clienteNome: perfilAtual.nome
-      });
-      e.target.reset();
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Publicar chamado";
-    }
-  });
-
-  document.querySelectorAll(".top-tab-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
-      document.querySelectorAll(".top-tab-btn").forEach(b => b.classList.remove("ativo"));
-      btn.classList.add("ativo");
-      abaAtiva = btn.dataset.aba;
-      renderizar();
-    });
-  });
-
-  window.assumirChamado = async (demandaId) => {
-    await assumirDemanda(demandaId, { tecnicoId: usuarioAtual.uid, tecnicoNome: perfilAtual.nome });
-  };
-
-  function formatarTempo(timestamp) {
-    if (!timestamp) return "agora";
-    const data = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return data.toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
-  }
-
-  function renderizar() {
-    const container = document.getElementById("lista-demandas");
-    const souTecnico = perfilAtual?.tipo === "tecnico";
-
-    let lista = todasDemandas.filter(d => {
-      if (souTecnico) {
-        return d.status === "aberto" || d.tecnicoId === usuarioAtual.uid;
-      }
-      return d.clienteId === usuarioAtual.uid;
+                div.innerHTML = `
+                    <div class="ticket-header">
+                        <span style="font-weight: bold; color: #8695A7;">#${chamado.ticketId}</span>
+                        <span class="badge status-${chamado.status}">${LABEL_STATUS[chamado.status]}</span>
+                    </div>
+                    <h3 style="margin: 5px 0 10px 0;">${chamado.titulo}</h3>
+                    <p style="color: #A0AAB5; font-size: 0.9rem; margin-bottom: 15px;">${chamado.descricao}</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 15px;">
+                        <span style="font-size: 0.85rem; color: #8695A7;"><i class="fas fa-tag"></i> ${LABEL_CATEGORIA[chamado.categoria]}</span>
+                        ${btnChat}
+                    </div>
+                `;
+                listaDiv.appendChild(div);
+            });
+        });
     });
 
-    if (abaAtiva === "meus") {
-      lista = lista.filter(d => souTecnico ? d.tecnicoId === usuarioAtual.uid : d.clienteId === usuarioAtual.uid);
-    } else if (abaAtiva === "abertos") {
-      lista = lista.filter(d => d.status === "aberto");
-    }
+    // Função ativada quando o cliente clica em "Publicar chamado"
+    const formChamado = document.getElementById("form-chamado");
+    if(formChamado) {
+        formChamado.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector("button");
+            btn.textContent = "Publicando...";
+            btn.disabled = true;
 
-    if (lista.length === 0) {
-      container.innerHTML = `<div class="vazio"><div class="icone">🗂️</div>Nenhum chamado por aqui ainda.</div>`;
-      return;
-    }
+            const dados = {
+                titulo: document.getElementById("titulo").value,
+                descricao: document.getElementById("descricao").value,
+                categoria: document.getElementById("categoria").value,
+                clienteId: meuId,
+                clienteNome: meuPerfil.nome
+            };
 
-    container.innerHTML = lista.map(d => `
-      <div class="ticket-card">
-        <div class="topo">
-          <span class="ticket-id mono">#${d.ticketId}</span>
-          <span class="pill pill-${d.status}">${LABEL_STATUS[d.status] || d.status}</span>
-        </div>
-        <span class="categoria">${LABEL_CATEGORIA[d.categoria] || d.categoria}</span>
-        <h3>${escapeHtml(d.titulo)}</h3>
-        <p class="desc">${escapeHtml(d.descricao)}</p>
-        <div class="rodape">
-          <span>${souTecnico ? "Cliente: " + escapeHtml(d.clienteNome || "—") : (d.tecnicoNome ? "Técnico: " + escapeHtml(d.tecnicoNome) : "Aguardando técnico")} · ${formatarTempo(d.criadoEm)}</span>
-          <div class="acoes">
-            ${botaoAcao(d, souTecnico)}
-          </div>
-        </div>
-      </div>
-    `).join("");
-  }
-
-  function botaoAcao(d, souTecnico) {
-    if (souTecnico && d.status === "aberto") {
-      return `<button class="btn-primario" onclick="assumirChamado('${d.id}')">Assumir chamado</button>`;
+            try {
+                await criarDemanda(dados);
+                e.target.reset(); // Limpa os campos depois de salvar
+            } catch (error) {
+                alert("Erro ao publicar: " + error.message);
+            } finally {
+                btn.textContent = "Publicar chamado";
+                btn.disabled = false;
+            }
+        });
     }
-    if (d.status === "em_negociacao" && (d.tecnicoId === usuarioAtual.uid || d.clienteId === usuarioAtual.uid)) {
-      return `<a href="chat.html?demanda=${d.id}"><button class="btn-secundario">Abrir chat</button></a>`;
-    }
-    if (d.status === "resolvido") {
-      return `<span class="mono" style="color:var(--ok); font-size:0.8rem;">concluído</span>`;
-    }
-    return "";
-  }
-
-  function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str || "";
-    return div.innerHTML;
-  }
 </script>
 </body>
 </html>

@@ -7,96 +7,118 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
-    body { padding-bottom: 70px !important; }
-    .bottom-nav {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background-color: #17212B;
-        border-top: 1px solid #263340;
-        display: flex;
-        justify-content: space-around;
-        padding: 10px 0;
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
-        z-index: 1000;
-    }
-    .bottom-nav .nav-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-decoration: none;
-        color: #8695A7;
-        font-size: 11px;
-    }
-    .bottom-nav .nav-item.active,
-    .bottom-nav .nav-item:hover {
-        color: #4FD1C5;
-    }
-    .bottom-nav .nav-item i {
-        font-size: 18px;
-        margin-bottom: 4px;
-    }
-    .chat-container {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        max-width: 800px;
-        margin: 20px auto;
-        padding: 20px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
+    body { padding-bottom: 130px !important; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #17212B; border-top: 1px solid #263340; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+    .bottom-nav .nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8695A7; font-size: 11px; }
+    .bottom-nav .nav-item.active { color: #4FD1C5; }
+    .bottom-nav .nav-item i { font-size: 18px; margin-bottom: 4px; }
+    
+    /* Estilos do Chat */
+    .chat-container { display: flex; flex-direction: column; padding: 20px; margin-top: 60px; max-width: 800px; margin-left: auto; margin-right: auto; }
+    .balao-msg { max-width: 80%; padding: 12px 16px; border-radius: 12px; margin-bottom: 12px; position: relative; color: #fff; word-wrap: break-word; }
+    .balao-msg.minha { background-color: var(--accent, #4FD1C5); color: #17212B; align-self: flex-end; border-bottom-right-radius: 2px; }
+    .balao-msg.outro { background-color: var(--surface-alt, #263340); align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid var(--border); }
+    .nome-msg { font-size: 0.75rem; font-weight: bold; margin-bottom: 5px; opacity: 0.8; }
+    
+    .chat-form { position: fixed; bottom: 65px; left: 0; width: 100%; background-color: var(--surface, #1C2733); padding: 10px 20px; border-top: 1px solid var(--border); display: flex; gap: 10px; align-items: center; justify-content: center; z-index: 999; }
+    .chat-form input { flex: 1; max-width: 700px; padding: 12px 20px; border-radius: 25px; border: 1px solid var(--border); background: var(--surface-alt); color: #fff; outline: none; }
+    .chat-form button { background: var(--accent, #4FD1C5); border: none; color: #17212B; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    
+    .aviso-vazio { text-align: center; margin-top: 100px; color: #8695A7; }
 </style>
 </head>
 <body>
 
 <div class="topbar">
-  <div class="logo"><span class="dot"></span> HelpTI</div>
+  <div class="logo"><span class="dot"></span> HelpTI Chat</div>
   <div class="user-info">
-    <span id="nome-usuario">A carregar...</span>
-    <span class="badge-tipo" id="badge-tipo" style="text-transform: capitalize; margin-left: 6px; font-size: 0.8rem; background: var(--surface-alt); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border);">—</span>
-    <button class="btn-sair" id="btn-sair" style="margin-left: 10px;">Sair</button>
+    <span id="nome-usuario" style="font-weight: bold; color: var(--accent);">Carregando...</span>
   </div>
 </div>
 
-<div class="feed-container">
-  <div class="chat-container">
-    <h2>Chat do Chamado</h2>
-    <p class="sub">Converse com a outra parte para alinhar os detalhes da resolução.</p>
-    <div id="area-chat" style="margin-top: 20px; min-height: 250px; border: 1px solid var(--border); border-radius: 8px; padding: 15px; background: var(--surface-alt);">
-      <p class="sub" style="text-align: center; margin-top: 80px;">Selecione um chamado no feed para abrir o chat correspondente.</p>
+<!-- Container onde as mensagens vão aparecer -->
+<div class="chat-container" id="chat-box">
+    <div class="aviso-vazio" id="aviso-chat">
+        <h2>Nenhum chamado selecionado</h2>
+        <p>Vá até o Feed e clique em "Abrir Chat" em um chamado.</p>
     </div>
-  </div>
 </div>
+
+<!-- Área de digitar a mensagem -->
+<form class="chat-form" id="form-mensagem" style="display: none;">
+    <input type="text" id="input-texto" placeholder="Digite sua mensagem..." autocomplete="off" required>
+    <button type="submit"><i class="fas fa-paper-plane"></i></button>
+</form>
 
 <nav class="bottom-nav">
-    <a href="feed.html" class="nav-item">
-        <i class="fas fa-home"></i>
-        <span>Início</span>
-    </a>
-    <a href="chat.html" class="nav-item active">
-        <i class="fas fa-comments"></i>
-        <span>Chat</span>
-    </a>
-    <a href="notificacoes.html" class="nav-item">
-        <i class="fas fa-bell"></i>
-        <span>Notificações</span>
-    </a>
-    <a href="perfil.html" class="nav-item">
-        <i class="fas fa-user"></i>
-        <span>Perfil</span>
-    </a>
+    <a href="feed.html" class="nav-item"><i class="fas fa-home"></i><span>Início</span></a>
+    <a href="chat.html" class="nav-item active"><i class="fas fa-comments"></i><span>Chat</span></a>
+    <a href="perfil.html" class="nav-item"><i class="fas fa-user"></i><span>Perfil</span></a>
 </nav>
 
 <script type="module">
-  import { exigirLogin, logoutUsuario } from "./js/auth.js";
+    import { exigirLogin } from "./js/auth.js";
+    import { escutarMensagens, enviarMensagem } from "./js/chat.js";
 
-  document.getElementById("btn-sair").addEventListener("click", logoutUsuario);
+    let meuUsuarioId = null;
+    let meuNome = null;
+    
+    // MÁGICA: Lê a URL para descobrir em qual chamado estamos conversando
+    const urlParams = new URLSearchParams(window.location.search);
+    const demandaId = urlParams.get("id");
 
-  exigirLogin((user, perfil) => {
-    document.getElementById("nome-usuario").textContent = perfil?.nome || user.email;
-    document.getElementById("badge-tipo").textContent = perfil?.tipo || "cliente";
-  });
+    const chatBox = document.getElementById("chat-box");
+    const formMensagem = document.getElementById("form-mensagem");
+    const avisoChat = document.getElementById("aviso-chat");
+
+    exigirLogin((user, perfil) => {
+        meuUsuarioId = user.uid;
+        meuNome = perfil.nome;
+
+        if (demandaId) {
+            // Esconde o aviso e mostra o formulário de digitar texto
+            avisoChat.style.display = "none";
+            formMensagem.style.display = "flex";
+
+            // Ativa o ouvinte em tempo real do Firebase
+            escutarMensagens(demandaId, (mensagens) => {
+                chatBox.innerHTML = ""; // Limpa a tela
+                
+                if(mensagens.length === 0) {
+                    chatBox.innerHTML = "<p style='text-align:center; color:#8695A7; margin-top: 20px;'>Envie a primeira mensagem para começar!</p>";
+                }
+
+                mensagens.forEach(msg => {
+                    // Verifica se a mensagem foi enviada por mim ou pelo outro
+                    const ehMinha = (msg.usuarioId === meuUsuarioId);
+                    
+                    const divMsg = document.createElement("div");
+                    divMsg.className = "balao-msg " + (ehMinha ? "minha" : "outro");
+                    divMsg.innerHTML = `
+                        <div class="nome-msg">${ehMinha ? "Você" : msg.nome}</div>
+                        <div class="texto-msg">${msg.texto}</div>
+                    `;
+                    chatBox.appendChild(divMsg);
+                });
+
+                // Faz a tela rolar para baixo automaticamente para ver a nova mensagem
+                window.scrollTo(0, document.body.scrollHeight);
+            });
+        }
+    });
+
+    // Evento de apertar Enter ou clicar no botão de enviar
+    formMensagem.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const input = document.getElementById("input-texto");
+        const texto = input.value.trim();
+
+        if (texto !== "" && demandaId) {
+            input.value = ""; // Limpa o campo
+            // Envia para o banco de dados
+            await enviarMensagem(demandaId, meuUsuarioId, meuNome, texto);
+        }
+    });
 </script>
 </body>
 </html>

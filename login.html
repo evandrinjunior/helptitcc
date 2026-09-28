@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Login — HelpTI</title>
 <link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
@@ -34,15 +35,21 @@
         <button type="submit" class="btn-primario" id="btn-entrar" style="width:100%;">Entrar</button>
       </form>
 
+      <!-- Botão do Google -->
+      <div style="text-align: center; margin: 15px 0; color: #8695A7; font-size: 0.85rem;">OU</div>
+      <button type="button" id="btn-google" style="width:100%; padding: 12px; border-radius: 6px; background: #fff; color: #17212B; border: none; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1rem;">
+        <i class="fab fa-google" style="color: #DB4437; font-size: 1.2rem;"></i> Entrar com o Google
+      </button>
+
       <p class="rodape-link">Ainda não tem conta? <a href="cadastro.html">Cadastre-se</a></p>
     </div>
   </div>
 </div>
 
 <script type="module">
-  // A importação está agora com o nome correto: logarUsuario
-  import { logarUsuario } from "./js/auth.js";
+  import { logarUsuario, loginComGoogle } from "./js/auth.js";
 
+  // Login normal
   document.getElementById("form-login").addEventListener("submit", async (e) => {
     e.preventDefault();
     const btn = document.getElementById("btn-entrar");
@@ -53,7 +60,6 @@
     btn.textContent = "Entrando...";
 
     try {
-      // Chamamos a função corretamente aqui
       await logarUsuario(
         document.getElementById("email").value.trim(),
         document.getElementById("senha").value
@@ -62,6 +68,18 @@
       if (erroDiv) erroDiv.textContent = err.message;
       btn.disabled = false;
       btn.textContent = "Entrar";
+    }
+  });
+
+  // Login com Google
+  document.getElementById("btn-google").addEventListener("click", async () => {
+    const btnGoogle = document.getElementById("btn-google");
+    btnGoogle.textContent = "Carregando...";
+    try {
+      await loginComGoogle();
+    } catch (err) {
+      alert("Erro no Google: " + err.message);
+      btnGoogle.innerHTML = '<i class="fab fa-google" style="color: #DB4437; font-size: 1.2rem;"></i> Entrar com o Google';
     }
   });
 </script>

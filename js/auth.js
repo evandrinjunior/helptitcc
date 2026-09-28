@@ -1,69 +1,78 @@
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+// CORREÇÃO AQUI: Importando as funções do banco de dados para o auth.js
 import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
 
+// 1. Função de Cadastro Normal
+export async function cadastrarUsuario(nome, email, senha, tipo) {
+    const credencial = await createUserWithEmailAndPassword(auth, email, senha);
+    const user = credencial.user;
+    
+    // Salva o perfil no Firestore
+    await setDoc(doc(db, "usuarios", user.uid), {
+        nome: nome,
+        email: email,
+        tipo: tipo,
+        criadoEm: new Date()
+    });
+    
+    window.location.href = "feed.html";
+}
+
+// 2. Função de Login Normal
 export async function logarUsuario(email, senha) {
-  try {
     await signInWithEmailAndPassword(auth, email, senha);
     window.location.href = "feed.html";
-  } catch (error) {
-    throw new Error("Erro ao entrar. Verifique o e-mail e a senha.");
-  }
 }
 
-export async function cadastrarUsuario(nome, email, senha, tipo) {
-  try {
-    const cred = await createUserWithEmailAndPassword(auth, email, senha);
-    // Guarda os dados de perfil no Firestore
-    await setDoc(doc(db, "usuarios", cred.user.uid), {
-      nome: nome,
-      email: email,
-      tipo: tipo,
-      criadoEm: new Date()
-    });
-    window.location.href = "feed.html";
-  } catch (error) {
-    throw new Error("Erro ao criar conta.");
-  }
-}
+// 3. Função do Google
+export async function loginComGoogle() {
+    const provider = new GoogleAuthProvider();
+    const cred = await signInWithPopup(auth, provider);
+    const user = cred.user;
 
-export function logoutUsuario() {
-  signOut(auth).then(() => {
-    window.location.href = "login.html";
-  });
-}
+    const docRef = doc(db, "usuarios", user.uid);
+    const docSnap = await getDoc(docRef);
 
-// Esta é a função mágica que resolve o seu problema do topo da tela
-export function exigirLogin(callback) {
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      window.location.href = "login.html"; // Manda para o login se não estiver autenticado
-      return;
+    // Se for o primeiro acesso, cria o perfil como cliente
+    if (!docSnap.exists()) {
+        await setDoc(docRef, {
+            nome: user.displayName,
+            email: user.email,
+            tipo: "cliente",
+            criadoEm: new Date()
+        });
     }
     
-    try {
-      // Vai ao Firestore buscar os dados reais que foram guardados no cadastro
-      const docRef = doc(db, "usuarios", user.uid);
-      const docSnap = await getDoc(docRef);
-      
-      let perfil = { nome: user.email, tipo: "cliente" }; // Fallback caso falhe
-      
-      if (docSnap.exists()) {
-        perfil = docSnap.data();
-      }
+    window.location.href = "feed.html";
+}
 
-      // 1. Atualiza automaticamente o nome no topo de TODAS as páginas
-      const elNome = document.getElementById("nome-usuario");
-      const elTipo = document.getElementById("badge-tipo");
-      
-      if (elNome) elNome.textContent = perfil.nome;
-      if (elTipo) elTipo.textContent = perfil.tipo;
+// 4. Função que protege as páginas (Feed, Chat, Perfil)
+export function exigirLogin(callback) {
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const docSnap = await getDoc(doc(db, "usuarios", user.uid));
+            if (docSnap.exists()) {
+                const perfil = docSnap.data();
+                
+                // Atualiza o nome na barra superior
+                const nomeEl = document.getElementById("nome-usuario");
+                if(nomeEl) nomeEl.textContent = perfil.nome;
+                
+                // Atualiza a etiqueta (badge) de tipo na barra superior
+                const badgeEl = document.getElementById("badge-tipo");
+                if(badgeEl) badgeEl.textContent = perfil.tipo;
 
-      // 2. Devolve os dados para a página usar onde precisar
-      callback(user, perfil);
-      
-    } catch (e) {
-      console.error("Erro ao puxar dados do Firestore:", e);
-    }
-  });
+                callback(user, perfil);
+            }
+        } else {
+            window.location.href = "login.html";
+        }
+    });
+}
+
+// 5. Função de Sair
+export async function deslogar() {
+    await signOut(auth);
+    window.location.href = "login.html";
 }

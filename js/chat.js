@@ -1,38 +1,30 @@
-// ============================================================
-// CHAT INTERNO — HelpTI
-// Subcoleção "demandas/{demandaId}/mensagens/{id}" = {
-//   remetenteId, remetenteNome, texto, criadoEm
-// }
-// ============================================================
+import { collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { db } from "./firebase-config.js";
-import {
-  doc, getDoc, collection, addDoc, query, orderBy,
-  onSnapshot, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// --- Busca os dados do chamado (para mostrar cabeçalho do chat) ---
-export async function buscarDemanda(demandaId) {
-  const snap = await getDoc(doc(db, "demandas", demandaId));
-  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
-}
-
-// --- Envia mensagem no chamado ---
-export async function enviarMensagem(demandaId, { remetenteId, remetenteNome, texto }) {
+// Escuta as mensagens de um chamado específico em tempo real
+export function escutarMensagens(demandaId, callback) {
+  // Cria uma "subcoleção" de mensagens dentro do chamado específico
   const mensagensRef = collection(db, "demandas", demandaId, "mensagens");
-  await addDoc(mensagensRef, {
-    remetenteId,
-    remetenteNome,
-    texto,
-    criadoEm: serverTimestamp()
+  
+  // Ordena para as mais antigas aparecerem em cima e as novas embaixo
+  const q = query(mensagensRef, orderBy("criadoEm", "asc"));
+  
+  return onSnapshot(q, (snapshot) => {
+    const lista = [];
+    snapshot.forEach((doc) => {
+      lista.push({ id: doc.id, ...doc.data() });
+    });
+    callback(lista);
   });
 }
 
-// --- Escuta mensagens em tempo real ---
-export function escutarMensagens(demandaId, callback) {
+// Salva uma nova mensagem no banco de dados
+export async function enviarMensagem(demandaId, usuarioId, nome, texto) {
   const mensagensRef = collection(db, "demandas", demandaId, "mensagens");
-  const q = query(mensagensRef, orderBy("criadoEm", "asc"));
-  return onSnapshot(q, (snap) => {
-    const lista = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    callback(lista);
+  await addDoc(mensagensRef, {
+    usuarioId: usuarioId,
+    nome: nome,
+    texto: texto,
+    criadoEm: new Date() // Data e hora exata do envio
   });
 }
