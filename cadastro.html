@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Criar conta — HelpTI</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="auth-layout">
+  <div class="auth-pitch">
+    <div>
+      <h1>Todo chamado começa com um cadastro simples.</h1>
+      <p class="sub">Escolha se você vem publicar uma demanda ou se vem resolver os chamados de outras pessoas. Você pode ter apenas um perfil por conta.</p>
+    </div>
+
+    <div class="ticket-ticker">
+      <div class="linha"><span>cliente</span><span>publica o chamado</span></div>
+      <div class="linha"><span>técnico</span><span>assume e negocia</span></div>
+      <div class="linha"><span>chat interno</span><span>alinham a solução</span></div>
+    </div>
+  </div>
+
+  <div class="auth-form-side">
+    <div class="auth-card">
+      <h2>Criar conta</h2>
+      <p class="sub">Leva menos de um minuto.</p>
+
+      <div class="campo">
+        <label>Eu sou</label>
+        <div class="segmentado" id="seletor-tipo">
+          <button type="button" data-tipo="cliente" class="ativo">Cliente</button>
+          <button type="button" data-tipo="tecnico">Técnico</button>
+        </div>
+      </div>
+
+      <form id="form-cadastro">
+        <div class="campo">
+          <label for="nome">Nome completo</label>
+          <input type="text" id="nome" required autocomplete="name">
+        </div>
+        <div class="campo">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" required autocomplete="email">
+        </div>
+        <div class="campo">
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" required minlength="6" autocomplete="new-password">
+        </div>
+        <div class="erro-msg" id="erro"></div>
+        <button type="submit" class="btn-primario" id="btn-criar" style="width:100%;">Criar conta como <span id="label-tipo">cliente</span></button>
+      </form>
+
+      <p class="rodape-link">Já tem conta? <a href="login.html">Entrar</a></p>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { cadastrarUsuario, traduzErroAuth } from "./js/auth.js";
+
+  let tipoSelecionado = "cliente";
+  const botoesTipo = document.querySelectorAll("#seletor-tipo button");
+  const labelTipo = document.getElementById("label-tipo");
+
+  botoesTipo.forEach(b => b.addEventListener("click", () => {
+    botoesTipo.forEach(x => x.classList.remove("ativo"));
+    b.classList.add("ativo");
+    tipoSelecionado = b.dataset.tipo;
+    labelTipo.textContent = tipoSelecionado;
+  }));
+
+  const form = document.getElementById("form-cadastro");
+  const erroEl = document.getElementById("erro");
+  const btn = document.getElementById("btn-criar");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    erroEl.textContent = "";
+    btn.disabled = true;
+    btn.textContent = "Criando conta...";
+
+    try {
+      await cadastrarUsuario({
+        nome: document.getElementById("nome").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        senha: document.getElementById("senha").value,
+        tipo: tipoSelecionado
+      });
+      window.location.href = "feed.html";
+    } catch (err) {
+      erroEl.textContent = traduzErroAuth(err);
+      btn.disabled = false;
+      btn.textContent = `Criar conta como ${tipoSelecionado}`;
+    }
+  });
+</script>
+
+</body>
+</html>

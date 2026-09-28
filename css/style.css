@@ -1,0 +1,324 @@
+/* ============================================================
+   HelpTI — Design System
+   Conceito: quadro de chamados técnicos (ticket board), não uma
+   listagem de marketplace genérica. Cada demanda é um "chamado"
+   com ID monoespaçado, categoria e status — vocabulário de
+   sistema de suporte técnico do início ao fim.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  /* cor */
+  --bg: #0F1720;
+  --surface: #17212B;
+  --surface-alt: #1E2A36;
+  --border: #263340;
+  --text: #E7EDF2;
+  --text-dim: #8695A7;
+  --accent: #4FD1C5;      /* aberto / ação primária */
+  --accent-dark: #2CA89D;
+  --warn: #F2B84B;        /* em negociação */
+  --ok: #6FCF97;          /* resolvido */
+  --danger: #E5675F;      /* cancelado / erro */
+
+  /* tipografia */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+}
+
+h1, h2, h3 { font-family: var(--font-display); margin: 0; letter-spacing: -0.01em; }
+
+a { color: var(--accent); text-decoration: none; }
+
+.mono { font-family: var(--font-mono); letter-spacing: 0.02em; }
+
+button, input, select, textarea { font-family: inherit; font-size: 1rem; }
+
+/* --- Barra superior --- */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.topbar .logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.topbar .logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.topbar .user-info { display: flex; align-items: center; gap: 14px; font-size: 0.9rem; color: var(--text-dim); }
+.badge-tipo {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  color: var(--accent);
+}
+
+.btn-sair {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 7px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.btn-sair:hover { border-color: var(--danger); color: var(--danger); }
+
+/* --- Botões --- */
+.btn-primario {
+  background: var(--accent);
+  color: #06171B;
+  border: none;
+  font-weight: 600;
+  padding: 11px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.btn-primario:hover { background: var(--accent-dark); }
+.btn-primario:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-secundario {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.btn-secundario:hover { border-color: var(--accent); color: var(--accent); }
+
+/* --- Pills de status --- */
+.pill {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.pill-aberto        { color: var(--accent); background: rgba(79,209,197,0.1); border-color: rgba(79,209,197,0.3); }
+.pill-em_negociacao { color: var(--warn); background: rgba(242,184,75,0.1); border-color: rgba(242,184,75,0.3); }
+.pill-resolvido     { color: var(--ok); background: rgba(111,207,151,0.1); border-color: rgba(111,207,151,0.3); }
+.pill-cancelado     { color: var(--danger); background: rgba(229,103,95,0.1); border-color: rgba(229,103,95,0.3); }
+
+/* ============================================================
+   Telas de autenticação (login / cadastro)
+   ============================================================ */
+.auth-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  min-height: 100vh;
+}
+.auth-pitch {
+  background: linear-gradient(160deg, var(--surface-alt), var(--bg));
+  border-right: 1px solid var(--border);
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+.auth-pitch h1 { font-size: 2.1rem; line-height: 1.25; max-width: 420px; }
+.auth-pitch .sub { color: var(--text-dim); margin-top: 14px; max-width: 400px; }
+
+/* "ticker" ao vivo de chamados — elemento de assinatura visual */
+.ticket-ticker {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(23,33,43,0.7);
+  backdrop-filter: blur(6px);
+  padding: 14px;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  max-width: 420px;
+}
+.ticket-ticker .linha {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border);
+  opacity: 0;
+  animation: aparecer 0.5s forwards;
+}
+.ticket-ticker .linha:last-child { border-bottom: none; }
+.ticket-ticker .linha:nth-child(1) { animation-delay: 0.1s; }
+.ticket-ticker .linha:nth-child(2) { animation-delay: 0.35s; }
+.ticket-ticker .linha:nth-child(3) { animation-delay: 0.6s; }
+@keyframes aparecer { to { opacity: 1; } }
+
+.auth-form-side {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+.auth-card { width: 100%; max-width: 380px; }
+.auth-card h2 { font-size: 1.5rem; margin-bottom: 6px; }
+.auth-card .sub { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 28px; }
+
+.campo { margin-bottom: 16px; }
+.campo label { display: block; font-size: 0.82rem; color: var(--text-dim); margin-bottom: 6px; }
+.campo input, .campo select, .campo textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 11px 13px;
+  border-radius: 8px;
+  outline: none;
+  transition: 0.15s;
+}
+.campo input:focus, .campo select:focus, .campo textarea:focus { border-color: var(--accent); }
+
+/* seletor cliente / técnico */
+.segmentado { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.segmentado button {
+  flex: 1;
+  padding: 10px;
+  background: var(--surface);
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 0.88rem;
+  transition: 0.15s;
+}
+.segmentado button.ativo { background: var(--accent); color: #06171B; font-weight: 600; }
+
+.erro-msg {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin-top: 4px;
+  min-height: 1em;
+}
+.rodape-link { margin-top: 22px; font-size: 0.88rem; color: var(--text-dim); text-align: center; }
+
+@media (max-width: 860px) {
+  .auth-layout { grid-template-columns: 1fr; }
+  .auth-pitch { display: none; }
+}
+
+/* ============================================================
+   Feed de demandas (quadro de chamados)
+   ============================================================ */
+.feed-container { max-width: 900px; margin: 0 auto; padding: 28px 24px 80px; }
+.feed-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.feed-header .sub { color: var(--text-dim); font-size: 0.9rem; margin-top: 4px; }
+
+.filtros { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.filtro-chip {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  background: var(--surface);
+  cursor: pointer;
+}
+.filtro-chip.ativo { border-color: var(--accent); color: var(--accent); }
+
+.painel-nova {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 24px;
+}
+.painel-nova .linha-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.ticket-card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  transition: 0.15s;
+}
+.ticket-card:hover { border-color: var(--accent-dark); }
+.ticket-card .topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.ticket-card .ticket-id { color: var(--text-dim); font-size: 0.78rem; }
+.ticket-card .categoria { font-size: 0.78rem; color: var(--text-dim); }
+.ticket-card h3 { font-size: 1.05rem; margin: 6px 0; }
+.ticket-card p.desc { color: var(--text-dim); font-size: 0.9rem; margin: 0 0 12px; line-height: 1.5; }
+.ticket-card .rodape { display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem; color: var(--text-dim); }
+.ticket-card .rodape .acoes { display: flex; gap: 8px; }
+
+.vazio { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+.vazio .icone { font-size: 2rem; margin-bottom: 10px; }
+
+/* ============================================================
+   Chat interno (negociação técnico ↔ cliente)
+   ============================================================ */
+.chat-layout { max-width: 760px; margin: 0 auto; padding: 24px; display: flex; flex-direction: column; height: calc(100vh - 73px); }
+.chat-cabecalho {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-bottom: 14px;
+}
+.chat-cabecalho .topo { display: flex; justify-content: space-between; align-items: center; }
+.chat-cabecalho .participantes { color: var(--text-dim); font-size: 0.85rem; margin-top: 6px; }
+.chat-cabecalho select { margin-top: 10px; }
+
+.chat-thread {
+  flex: 1;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.msg { max-width: 72%; padding: 10px 14px; border-radius: 12px; font-size: 0.92rem; line-height: 1.4; }
+.msg .hora { display: block; font-family: var(--font-mono); font-size: 0.68rem; color: rgba(255,255,255,0.5); margin-top: 4px; }
+.msg.propria { align-self: flex-end; background: var(--accent-dark); color: #06171B; border-bottom-right-radius: 3px; }
+.msg.propria .hora { color: rgba(6,23,27,0.6); }
+.msg.outra { align-self: flex-start; background: var(--surface-alt); border: 1px solid var(--border); border-bottom-left-radius: 3px; }
+.msg .autor { font-size: 0.72rem; color: var(--text-dim); margin-bottom: 2px; display: block; }
+
+.chat-input-linha { display: flex; gap: 10px; margin-top: 14px; }
+.chat-input-linha input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px 14px;
+  border-radius: 8px;
+  outline: none;
+}
+.chat-input-linha input:focus { border-color: var(--accent); }
+
+.aviso-central { text-align: center; color: var(--text-dim); padding: 20px; font-size: 0.9rem; }

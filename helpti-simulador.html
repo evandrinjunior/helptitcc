@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HelpTI — Simulador</title>
+<style>
+:root {
+  --bg: #0F1720; --surface: #17212B; --surface-alt: #1E2A36; --border: #263340;
+  --text: #E7EDF2; --text-dim: #8695A7;
+  --accent: #4FD1C5; --accent-dark: #2CA89D;
+  --warn: #F2B84B; --ok: #6FCF97; --danger: #E5675F;
+  --radius: 10px;
+}
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font-family: Arial, Helvetica, sans-serif; }
+h1,h2,h3 { font-family: Arial, sans-serif; margin:0; }
+.mono { font-family: 'Courier New', monospace; }
+
+.aviso { background: var(--warn); color:#2B1D00; text-align:center; padding:8px; font-size:0.85rem; font-weight:bold; }
+
+.topbar { display:flex; align-items:center; justify-content:space-between; padding:16px 24px; border-bottom:1px solid var(--border); background:var(--surface); }
+.logo { font-weight:bold; font-size:1.2rem; display:flex; align-items:center; gap:8px; }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--accent); }
+
+.segmentado { display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+.segmentado button { padding:9px 16px; background:var(--surface); border:none; color:var(--text-dim); cursor:pointer; }
+.segmentado button.ativo { background:var(--accent); color:#06171B; font-weight:bold; }
+
+.container { max-width:760px; margin:0 auto; padding:24px; }
+
+.painel { border:1px solid var(--border); background:var(--surface); border-radius:var(--radius); padding:18px 20px; margin-bottom:22px; }
+.campo { margin-bottom:14px; }
+.campo label { display:block; font-size:0.85rem; color:var(--text-dim); margin-bottom:6px; }
+.campo input, .campo select, .campo textarea {
+  width:100%; background:var(--bg); border:1px solid var(--border); color:var(--text);
+  padding:10px 12px; border-radius:8px; outline:none;
+}
+.linha-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+.btn { background:var(--accent); color:#06171B; border:none; font-weight:bold; padding:10px 18px; border-radius:8px; cursor:pointer; }
+.btn:hover { background:var(--accent-dark); }
+.btn-sec { background:transparent; border:1px solid var(--border); color:var(--text); padding:9px 16px; border-radius:8px; cursor:pointer; }
+.btn-sec:hover { border-color:var(--accent); color:var(--accent); }
+
+.pill { font-family:'Courier New',monospace; font-size:0.7rem; text-transform:uppercase; padding:4px 9px; border-radius:999px; border:1px solid transparent; }
+.pill-aberto { color:var(--accent); background:rgba(79,209,197,.1); border-color:rgba(79,209,197,.3); }
+.pill-em_negociacao { color:var(--warn); background:rgba(242,184,75,.1); border-color:rgba(242,184,75,.3); }
+.pill-resolvido { color:var(--ok); background:rgba(111,207,151,.1); border-color:rgba(111,207,151,.3); }
+.pill-cancelado { color:var(--danger); background:rgba(229,103,95,.1); border-color:rgba(229,103,95,.3); }
+
+.card { border:1px solid var(--border); background:var(--surface); border-radius:var(--radius); padding:16px 18px; margin-bottom:12px; }
+.card .topo { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.card h3 { margin:6px 0; font-size:1.05rem; }
+.card p { color:var(--text-dim); font-size:0.9rem; margin:0 0 10px; }
+.card .rodape { display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; color:var(--text-dim); }
+
+.vazio { text-align:center; padding:50px 20px; color:var(--text-dim); }
+
+/* chat */
+.chat-cabecalho { border:1px solid var(--border); background:var(--surface); border-radius:var(--radius); padding:14px 18px; margin-bottom:12px; }
+.thread { border:1px solid var(--border); background:var(--surface); border-radius:var(--radius); padding:16px; height:340px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; }
+.msg { max-width:72%; padding:9px 13px; border-radius:12px; font-size:0.9rem; }
+.msg.propria { align-self:flex-end; background:var(--accent-dark); color:#06171B; }
+.msg.outra { align-self:flex-start; background:var(--surface-alt); border:1px solid var(--border); }
+.msg .autor { display:block; font-size:0.7rem; color:var(--text-dim); margin-bottom:2px; }
+.msg .hora { display:block; font-size:0.65rem; opacity:0.6; margin-top:3px; }
+.input-linha { display:flex; gap:8px; margin-top:10px; }
+.input-linha input { flex:1; background:var(--surface); border:1px solid var(--border); color:var(--text); padding:11px 13px; border-radius:8px; outline:none; }
+
+.hidden { display:none; }
+</style>
+</head>
+<body>
+
+
+
+<div class="topbar">
+  <div class="logo"><span class="dot"></span> HelpTI — simulador</div>
+  <div class="segmentado" id="seletor-visao">
+    <button data-visao="cliente" class="ativo">Sou cliente</button>
+    <button data-visao="tecnico">Sou técnico</button>
+  </div>
+</div>
+
+<!-- TELA: QUADRO DE CHAMADOS -->
+<div class="container" id="tela-feed">
+  <div class="painel" id="painel-nova">
+    <h3 style="margin-bottom:12px;">Abrir novo chamado</h3>
+    <form id="form-nova">
+      <div class="campo">
+        <label>Título</label>
+        <input type="text" id="titulo" required placeholder="Ex: Notebook não liga após atualização">
+      </div>
+      <div class="campo">
+        <label>Descreva o problema</label>
+        <textarea id="descricao" rows="3" required placeholder="Detalhe o que está acontecendo..."></textarea>
+      </div>
+      <div class="linha-2">
+        <div class="campo">
+          <label>Categoria</label>
+          <select id="categoria">
+            <option value="hardware">🖥️ Hardware</option>
+            <option value="software">💻 Software</option>
+          </select>
+        </div>
+        <div class="campo" style="display:flex; align-items:flex-end;">
+          <button type="submit" class="btn" style="width:100%;">Publicar chamado</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <h2 style="margin-bottom:14px;">Quadro de chamados</h2>
+  <div id="lista"></div>
+</div>
+
+<!-- TELA: CHAT -->
+<div class="container hidden" id="tela-chat">
+  <button class="btn-sec" id="btn-voltar" style="margin-bottom:16px;">← Voltar ao quadro</button>
+
+  <div class="chat-cabecalho">
+    <div class="topo">
+      <span class="mono" id="chat-ticket">#—</span>
+      <span class="pill" id="chat-status">—</span>
+    </div>
+    <h3 id="chat-titulo" style="margin-top:8px;"></h3>
+    <div style="color:var(--text-dim); font-size:0.85rem; margin-top:4px;" id="chat-participantes"></div>
+    <select id="chat-select-status" style="margin-top:10px; max-width:220px; background:var(--bg); color:var(--text); border:1px solid var(--border); padding:8px; border-radius:8px;">
+      <option value="em_negociacao">Em negociação</option>
+      <option value="resolvido">Marcar como resolvido</option>
+      <option value="cancelado">Cancelar chamado</option>
+    </select>
+  </div>
+
+  <div class="thread" id="thread"></div>
+  <div class="input-linha">
+    <input type="text" id="input-msg" placeholder="Escreva uma mensagem...">
+    <button class="btn" id="btn-enviar">Enviar</button>
+  </div>
+</div>
+
+<script>
+// ================== "banco" em memória (persiste no localStorage) ==================
+const CHAVE = "helpti_simulador";
+function estadoPadrao() {
+  return { demandas: [], mensagens: {} };
+}
+function carregarEstado() {
+  try { return JSON.parse(localStorage.getItem(CHAVE)) || estadoPadrao(); }
+  catch { return estadoPadrao(); }
+}
+function salvarEstado() { localStorage.setItem(CHAVE, JSON.stringify(estado)); }
+
+let estado = carregarEstado();
+let visao = "cliente"; // "cliente" ou "tecnico" — alternado no topo, simula os dois usuários
+let demandaAberta = null;
+
+const LABEL_STATUS = { aberto:"Aberto", em_negociacao:"Em negociação", resolvido:"Resolvido", cancelado:"Cancelado" };
+const LABEL_CATEGORIA = { hardware:"🖥️ Hardware", software:"💻 Software" };
+
+// ================== alternar visão ==================
+document.querySelectorAll("#seletor-visao button").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("#seletor-visao button").forEach(x => x.classList.remove("ativo"));
+    b.classList.add("ativo");
+    visao = b.dataset.visao;
+    document.getElementById("painel-nova").style.display = visao === "cliente" ? "block" : "none";
+    renderizarFeed();
+    if (demandaAberta) abrirChat(demandaAberta); // atualiza o chat pro novo "usuário"
+  });
+});
+
+// ================== criar chamado ==================
+document.getElementById("form-nova").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const id = "d" + Date.now();
+  const numero = estado.demandas.length + 1;
+  estado.demandas.unshift({
+    id,
+    ticketId: "HT-2026-" + String(numero).padStart(4, "0"),
+    titulo: document.getElementById("titulo").value.trim(),
+    descricao: document.getElementById("descricao").value.trim(),
+    categoria: document.getElementById("categoria").value,
+    status: "aberto",
+    clienteNome: "Você (cliente)",
+    tecnicoNome: null,
+    criadoEm: Date.now()
+  });
+  e.target.reset();
+  salvarEstado();
+  renderizarFeed();
+});
+
+// ================== renderizar quadro ==================
+function renderizarFeed() {
+  const container = document.getElementById("lista");
+  let lista = estado.demandas.filter(d => visao === "tecnico"
+    ? (d.status === "aberto" || d.tecnicoNome === "Você (técnico)")
+    : true // cliente vê todos os que ele mesmo criou (aqui só existe "Você" como cliente)
+  );
+
+  if (lista.length === 0) {
+    container.innerHTML = `<div class="vazio">🗂️ Nenhum chamado ainda. ${visao === "cliente" ? "Publique um acima." : "Aguardando chamados abertos."}</div>`;
+    return;
+  }
+
+  container.innerHTML = lista.map(d => `
+    <div class="card">
+      <div class="topo">
+        <span class="mono">#${d.ticketId}</span>
+        <span class="pill pill-${d.status}">${LABEL_STATUS[d.status]}</span>
+      </div>
+      <span style="color:var(--text-dim); font-size:0.8rem;">${LABEL_CATEGORIA[d.categoria]}</span>
+      <h3>${escapeHtml(d.titulo)}</h3>
+      <p>${escapeHtml(d.descricao)}</p>
+      <div class="rodape">
+        <span>${visao === "tecnico" ? d.clienteNome : (d.tecnicoNome ? "Técnico: " + d.tecnicoNome : "Aguardando técnico")}</span>
+        <div>${botaoAcao(d)}</div>
+      </div>
+    </div>
+  `).join("");
+}
+
+function botaoAcao(d) {
+  if (visao === "tecnico" && d.status === "aberto") {
+    return `<button class="btn" onclick="assumir('${d.id}')">Assumir chamado</button>`;
+  }
+  if (d.status === "em_negociacao") {
+    return `<button class="btn-sec" onclick="abrirChat('${d.id}')">Abrir chat</button>`;
+  }
+  if (d.status === "resolvido") {
+    return `<span class="mono" style="color:var(--ok); font-size:0.8rem;">concluído</span>`;
+  }
+  return "";
+}
+
+window.assumir = (id) => {
+  const d = estado.demandas.find(x => x.id === id);
+  d.status = "em_negociacao";
+  d.tecnicoNome = "Você (técnico)";
+  salvarEstado();
+  renderizarFeed();
+};
+
+// ================== chat ==================
+window.abrirChat = (id) => {
+  demandaAberta = id;
+  document.getElementById("tela-feed").classList.add("hidden");
+  document.getElementById("tela-chat").classList.remove("hidden");
+  const d = estado.demandas.find(x => x.id === id);
+  document.getElementById("chat-ticket").textContent = "#" + d.ticketId;
+  document.getElementById("chat-titulo").textContent = d.titulo;
+  document.getElementById("chat-status").textContent = LABEL_STATUS[d.status];
+  document.getElementById("chat-status").className = "pill pill-" + d.status;
+  document.getElementById("chat-participantes").textContent = `Cliente: ${d.clienteNome} · Técnico: ${d.tecnicoNome}`;
+
+  const select = document.getElementById("chat-select-status");
+  select.value = d.status === "aberto" ? "em_negociacao" : d.status;
+  select.onchange = () => {
+    d.status = select.value;
+    salvarEstado();
+    document.getElementById("chat-status").textContent = LABEL_STATUS[d.status];
+    document.getElementById("chat-status").className = "pill pill-" + d.status;
+  };
+
+  renderizarThread();
+};
+
+document.getElementById("btn-voltar").addEventListener("click", () => {
+  demandaAberta = null;
+  document.getElementById("tela-chat").classList.add("hidden");
+  document.getElementById("tela-feed").classList.remove("hidden");
+  renderizarFeed();
+});
+
+function renderizarThread() {
+  const thread = document.getElementById("thread");
+  const msgs = estado.mensagens[demandaAberta] || [];
+  const meuNome = visao === "cliente" ? "Você (cliente)" : "Você (técnico)";
+
+  if (msgs.length === 0) {
+    thread.innerHTML = `<div style="color:var(--text-dim); text-align:center; padding:30px;">Nenhuma mensagem ainda — escreva a primeira.</div>`;
+    return;
+  }
+
+  thread.innerHTML = msgs.map(m => `
+    <div class="msg ${m.autor === meuNome ? "propria" : "outra"}">
+      ${m.autor !== meuNome ? `<span class="autor">${escapeHtml(m.autor)}</span>` : ""}
+      ${escapeHtml(m.texto)}
+      <span class="hora">${new Date(m.hora).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</span>
+    </div>
+  `).join("");
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function enviar() {
+  const input = document.getElementById("input-msg");
+  const texto = input.value.trim();
+  if (!texto || !demandaAberta) return;
+  const meuNome = visao === "cliente" ? "Você (cliente)" : "Você (técnico)";
+  if (!estado.mensagens[demandaAberta]) estado.mensagens[demandaAberta] = [];
+  estado.mensagens[demandaAberta].push({ autor: meuNome, texto, hora: Date.now() });
+  input.value = "";
+  salvarEstado();
+  renderizarThread();
+}
+document.getElementById("btn-enviar").addEventListener("click", enviar);
+document.getElementById("input-msg").addEventListener("keydown", (e) => { if (e.key === "Enter") enviar(); });
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str || "";
+  return div.innerHTML;
+}
+
+renderizarFeed();
+</script>
+
+</body>
+</html>

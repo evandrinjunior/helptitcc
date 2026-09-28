@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat — HelpTI</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    body { padding-bottom: 70px !important; }
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: #17212B;
+        border-top: 1px solid #263340;
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+        z-index: 1000;
+    }
+    .bottom-nav .nav-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-decoration: none;
+        color: #8695A7;
+        font-size: 11px;
+    }
+    .bottom-nav .nav-item.active,
+    .bottom-nav .nav-item:hover {
+        color: #4FD1C5;
+    }
+    .bottom-nav .nav-item i {
+        font-size: 18px;
+        margin-bottom: 4px;
+    }
+    .chat-container {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span class="dot"></span> HelpTI</div>
+  <div class="user-info">
+    <span id="nome-usuario">A carregar...</span>
+    <span class="badge-tipo" id="badge-tipo" style="text-transform: capitalize; margin-left: 6px; font-size: 0.8rem; background: var(--surface-alt); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border);">—</span>
+    <button class="btn-sair" id="btn-sair" style="margin-left: 10px;">Sair</button>
+  </div>
+</div>
+
+<div class="feed-container">
+  <div class="chat-container">
+    <h2>Chat do Chamado</h2>
+    <p class="sub">Converse com a outra parte para alinhar os detalhes da resolução.</p>
+    <div id="area-chat" style="margin-top: 20px; min-height: 250px; border: 1px solid var(--border); border-radius: 8px; padding: 15px; background: var(--surface-alt);">
+      <p class="sub" style="text-align: center; margin-top: 80px;">Selecione um chamado no feed para abrir o chat correspondente.</p>
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+    <a href="feed.html" class="nav-item">
+        <i class="fas fa-home"></i>
+        <span>Início</span>
+    </a>
+    <a href="chat.html" class="nav-item active">
+        <i class="fas fa-comments"></i>
+        <span>Chat</span>
+    </a>
+    <a href="notificacoes.html" class="nav-item">
+        <i class="fas fa-bell"></i>
+        <span>Notificações</span>
+    </a>
+    <a href="perfil.html" class="nav-item">
+        <i class="fas fa-user"></i>
+        <span>Perfil</span>
+    </a>
+</nav>
+
+<script type="module">
+  import { exigirLogin, logoutUsuario } from "./js/auth.js";
+
+  document.getElementById("btn-sair").addEventListener("click", logoutUsuario);
+
+  exigirLogin((user, perfil) => {
+    document.getElementById("nome-usuario").textContent = perfil?.nome || user.email;
+    document.getElementById("badge-tipo").textContent = perfil?.tipo || "cliente";
+  });
+</script>
+</body>
+</html>

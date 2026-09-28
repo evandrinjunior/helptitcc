@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu Perfil — HelpTI</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    body { padding-bottom: 70px !important; }
+    .bottom-nav {
+        position: fixed; bottom: 0; left: 0; width: 100%;
+        background-color: #17212B; border-top: 1px solid #263340;
+        display: flex; justify-content: space-around; padding: 10px 0;
+        z-index: 1000;
+    }
+    .bottom-nav .nav-item {
+        display: flex; flex-direction: column; align-items: center;
+        text-decoration: none; color: #8695A7; font-size: 11px;
+    }
+    .bottom-nav .nav-item.active { color: #4FD1C5; }
+    .bottom-nav .nav-item i { font-size: 18px; margin-bottom: 4px; }
+    .perfil-card {
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 12px; padding: 24px; max-width: 600px;
+        margin: 30px auto;
+    }
+</style>
+</head>
+<body>
+
+<!-- O cabeçalho com os IDs que o auth.js vai preencher automaticamente -->
+<div class="topbar">
+  <div class="logo"><span class="dot"></span> HelpTI</div>
+  <div class="user-info">
+    <span id="nome-usuario" style="font-weight: bold; color: var(--accent);">Carregando...</span>
+    <span class="badge-tipo" id="badge-tipo" style="text-transform: capitalize; margin-left: 6px; font-size: 0.8rem; background: var(--surface-alt); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border);">—</span>
+    <button class="btn-sair" id="btn-sair" style="margin-left: 10px;">Sair</button>
+  </div>
+</div>
+
+<div class="feed-container">
+  <div class="perfil-card">
+    <h2>Meus Dados</h2>
+    <p class="sub" style="margin-bottom: 20px;">Informações cadastradas na sua conta.</p>
+
+    <div class="campo" style="margin-bottom: 15px;">
+      <label style="display: block; margin-bottom: 5px; color: var(--text-dim);">Nome de Usuário</label>
+      <input type="text" id="perfil-nome" disabled style="width: 100%; padding: 10px; border-radius: 6px; background: var(--surface-alt); border: 1px solid var(--border); color: #fff;">
+    </div>
+
+    <div class="campo" style="margin-bottom: 15px;">
+      <label style="display: block; margin-bottom: 5px; color: var(--text-dim);">E-mail Cadastrado</label>
+      <input type="email" id="perfil-email" disabled style="width: 100%; padding: 10px; border-radius: 6px; background: var(--surface-alt); border: 1px solid var(--border); color: #fff;">
+    </div>
+
+    <div class="campo" style="margin-bottom: 20px;">
+      <label style="display: block; margin-bottom: 5px; color: var(--text-dim);">Tipo de Perfil</label>
+      <input type="text" id="perfil-tipo" disabled style="width: 100%; padding: 10px; border-radius: 6px; background: var(--surface-alt); border: 1px solid var(--border); color: #fff; text-transform: capitalize;">
+    </div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+    <a href="feed.html" class="nav-item"><i class="fas fa-home"></i><span>Início</span></a>
+    <a href="chat.html" class="nav-item"><i class="fas fa-comments"></i><span>Chat</span></a>
+    <a href="perfil.html" class="nav-item active"><i class="fas fa-user"></i><span>Perfil</span></a>
+</nav>
+
+<script type="module">
+  import { exigirLogin, logoutUsuario } from "./js/auth.js";
+
+  // Configura o botão de sair
+  document.getElementById("btn-sair").addEventListener("click", logoutUsuario);
+
+  // Assim que a página carrega, o exigirLogin garante que os dados do topo apareçam
+  // e entrega as informações ("perfil") para preenchermos os campos do formulário
+  exigirLogin((user, perfil) => {
+    // Preenche os campos do perfil com os dados reais
+    document.getElementById("perfil-nome").value = perfil.nome;
+    document.getElementById("perfil-email").value = user.email;
+    document.getElementById("perfil-tipo").value = perfil.tipo;
+  });
+</script>
+</body>
+</html>

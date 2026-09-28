@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat do chamado — HelpTI</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span class="dot"></span> HelpTI</div>
+  <div class="user-info">
+    <span id="nome-usuario">carregando...</span>
+    <a href="feed.html"><button class="btn-secundario">← Voltar ao quadro</button></a>
+  </div>
+</div>
+
+<div class="chat-layout">
+  <div class="chat-cabecalho">
+    <div class="topo">
+      <span class="ticket-id mono" id="cab-ticket">#—</span>
+      <span class="pill" id="cab-status">—</span>
+    </div>
+    <h3 id="cab-titulo">Carregando chamado...</h3>
+    <div class="participantes" id="cab-participantes"></div>
+    <select id="select-status" style="display:none; margin-top:10px; max-width:220px;">
+      <option value="em_negociacao">Em negociação</option>
+      <option value="resolvido">Marcar como resolvido</option>
+      <option value="cancelado">Cancelar chamado</option>
+    </select>
+  </div>
+
+  <div class="chat-thread" id="chat-thread"></div>
+
+  <div class="chat-input-linha">
+    <input type="text" id="input-mensagem" placeholder="Escreva uma mensagem..." autocomplete="off">
+    <button class="btn-primario" id="btn-enviar">Enviar</button>
+  </div>
+</div>
+
+<script type="module">
+  import { exigirLogin, buscarDemanda, enviarMensagem, listarMensagens, atualizarStatusDemanda, escutarMudancas, LABEL_STATUS } from "./js/local-db.js";
+
+  const params = new URLSearchParams(window.location.search);
+  const demandaId = params.get("demanda");
+
+  if (!demandaId) {
+    document.getElementById("chat-thread").innerHTML = `<div class="aviso-central">Nenhum chamado selecionado. <a href="feed.html">Voltar ao quadro</a>.</div>`;
+    throw new Error("Sem ID de demanda na URL");
+  }
+
+  let usuarioAtual = null;
+
+  exigirLogin((user) => {
+    usuarioAtual = user;
+    document.getElementById("nome-usuario").textContent = user.nome;
+    carregarCabecalho();
+    renderizarMensagens();
+    escutarMudancas(() => { carregarCabecalho(); renderizarMensagens(); });
+  });
+
+  function carregarCabecalho() {
+    const d = buscarDemanda(demandaId);
+    if (!d) {
+      document.getElementById("chat-thread").innerHTML = `<div class="aviso-central">Chamado não encontrado.</div>`;
+      return;
+    }
+    document.getElementById("cab-ticket").textContent = "#" + d.ticketId;
+    document.getElementById("cab-titulo").textContent = d.titulo;
+    document.getElementById("cab-status").textContent = LABEL_STATUS[d.status];
+    document.getElementById("cab-status").className = "pill pill-" + d.status;
+    document.getElementById("cab-participantes").textContent = `Cliente: ${d.clienteNome} · Técnico: ${d.tecnicoNome || "—"}`;
+
+    const selectStatus = document.getElementById("select-status");
+    if (usuarioAtual.tipo === "tecnico" && d.tecnicoId === usuarioAtual.uid) {
+      selectStatus.style.display = "block";
+      selectStatus.value = d.status === "aberto" ? "em_negociacao" : d.status;
+      selectStatus.onchange = () => atualizarStatusDemanda(demandaId, selectStatus.value);
+    }
+  }
+
+  function formatarHora(ts) {
+    return new Date(ts).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function renderizarMensagens() {
+    const thread = document.getElementById("chat-thread");
+    const mensagens = listarMensagens(demandaId);
+    if (mensagens.length === 0) {
+      thread.innerHTML = `<div class="aviso-central">Nenhuma mensagem ainda — inicie a negociação.</div>`;
+      return;
+    }
+    thread.innerHTML = mensagens.map(m => {
+      const propria = m.remetenteId === usuarioAtual.uid;
+      return `
+        <div class="msg ${propria ? "propria" : "outra"}">
+          ${!propria ? `<span class="autor">${escapeHtml(m.remetenteNome)}</span>` : ""}
+          ${escapeHtml(m.texto)}
+          <span class="hora">${formatarHora(m.criadoEm)}</span>
+        </div>`;
+    }).join("");
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  function enviar() {
+    const input = document.getElementById("input-mensagem");
+    const texto = input.value.trim();
+    if (!texto) return;
+    input.value = "";
+    enviarMensagem(demandaId, { remetenteId: usuarioAtual.uid, remetenteNome: usuarioAtual.nome, texto });
+    renderizarMensagens();
+  }
+
+  document.getElementById("btn-enviar").addEventListener("click", enviar);
+  document.getElementById("input-mensagem").addEventListener("keydown", (e) => { if (e.key === "Enter") enviar(); });
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str || "";
+    return div.innerHTML;
+  }
+</script>
+
+</body>
+</html>

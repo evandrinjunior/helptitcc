@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chamados — HelpTI</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span class="dot"></span> HelpTI</div>
+  <div class="user-info">
+    <span id="nome-usuario">carregando...</span>
+    <span class="badge-tipo" id="badge-tipo">—</span>
+    <button class="btn-sair" id="btn-sair">Sair</button>
+  </div>
+</div>
+
+<div class="feed-container">
+  <div class="feed-header">
+    <div>
+      <h2>Quadro de chamados</h2>
+      <p class="sub" id="subtitulo-feed">Carregando...</p>
+    </div>
+  </div>
+
+  <div class="painel-nova" id="painel-nova" style="display:none;">
+    <h3 style="margin-bottom:14px;">Abrir novo chamado</h3>
+    <form id="form-nova-demanda">
+      <div class="campo">
+        <label for="titulo">Título</label>
+        <input type="text" id="titulo" required placeholder="Ex: Notebook não liga após atualização">
+      </div>
+      <div class="campo">
+        <label for="descricao">Descreva o problema</label>
+        <textarea id="descricao" rows="3" required placeholder="Quanto mais detalhe, mais rápido um técnico entende o problema."></textarea>
+      </div>
+      <div class="linha-2">
+        <div class="campo">
+          <label for="categoria">Categoria</label>
+          <select id="categoria">
+            <option value="hardware">🖥️ Hardware</option>
+            <option value="software">💻 Software</option>
+          </select>
+        </div>
+        <div class="campo" style="display:flex; align-items:flex-end;">
+          <button type="submit" class="btn-primario" style="width:100%;">Publicar chamado</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="filtros" id="filtros">
+    <button class="filtro-chip ativo" data-filtro="todos">Todos</button>
+    <button class="filtro-chip" data-filtro="aberto">Abertos</button>
+    <button class="filtro-chip" data-filtro="em_negociacao">Em negociação</button>
+    <button class="filtro-chip" data-filtro="resolvido">Resolvidos</button>
+  </div>
+
+  <div id="lista-demandas"></div>
+</div>
+
+<script type="module">
+  import { exigirLogin, logoutUsuario, listarDemandas, criarDemanda, assumirDemanda, escutarMudancas, LABEL_STATUS, LABEL_CATEGORIA } from "./js/local-db.js";
+
+  document.getElementById("btn-sair").addEventListener("click", logoutUsuario);
+
+  let usuarioAtual = null;
+  let filtroAtivo = "todos";
+
+  exigirLogin((user) => {
+    usuarioAtual = user;
+    document.getElementById("nome-usuario").textContent = user.nome;
+    document.getElementById("badge-tipo").textContent = user.tipo;
+
+    if (user.tipo === "cliente") {
+      document.getElementById("painel-nova").style.display = "block";
+      document.getElementById("subtitulo-feed").textContent = "Seus chamados publicados e o andamento de cada um.";
+    } else {
+      document.getElementById("subtitulo-feed").textContent = "Chamados abertos aguardando um técnico, e os que você já assumiu.";
+    }
+
+    renderizar();
+    escutarMudancas(renderizar); // atualiza sozinho se outra aba mudar algo
+  });
+
+  document.getElementById("form-nova-demanda").addEventListener("submit", (e) => {
+    e.preventDefault();
+    criarDemanda({
+      titulo: document.getElementById("titulo").value.trim(),
+      descricao: document.getElementById("descricao").value.trim(),
+      categoria: document.getElementById("categoria").value,
+      clienteId: usuarioAtual.uid,
+      clienteNome: usuarioAtual.nome
+    });
+    e.target.reset();
+    renderizar();
+  });
+
+  document.querySelectorAll(".filtro-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      document.querySelectorAll(".filtro-chip").forEach(c => c.classList.remove("ativo"));
+      chip.classList.add("ativo");
+      filtroAtivo = chip.dataset.filtro;
+      renderizar();
+    });
+  });
+
+  window.assumirChamado = (demandaId) => {
+    assumirDemanda(demandaId, { tecnicoId: usuarioAtual.uid, tecnicoNome: usuarioAtual.nome });
+    renderizar();
+  };
+
+  function formatarTempo(ts) {
+    return new Date(ts).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+  }
+
+  function renderizar() {
+    const container = document.getElementById("lista-demandas");
+    const souTecnico = usuarioAtual.tipo === "tecnico";
+
+    let lista = listarDemandas().filter(d => souTecnico
+      ? (d.status === "aberto" || d.tecnicoId === usuarioAtual.uid)
+      : d.clienteId === usuarioAtual.uid
+    );
+
+    if (filtroAtivo !== "todos") lista = lista.filter(d => d.status === filtroAtivo);
+
+    if (lista.length === 0) {
+      container.innerHTML = `<div class="vazio"><div class="icone">🗂️</div>Nenhum chamado por aqui ainda.</div>`;
+      return;
+    }
+
+    container.innerHTML = lista.map(d => `
+      <div class="ticket-card">
+        <div class="topo">
+          <span class="ticket-id mono">#${d.ticketId}</span>
+          <span class="pill pill-${d.status}">${LABEL_STATUS[d.status]}</span>
+        </div>
+        <span class="categoria">${LABEL_CATEGORIA[d.categoria]}</span>
+        <h3>${escapeHtml(d.titulo)}</h3>
+        <p class="desc">${escapeHtml(d.descricao)}</p>
+        <div class="rodape">
+          <span>${souTecnico ? "Cliente: " + escapeHtml(d.clienteNome) : (d.tecnicoNome ? "Técnico: " + escapeHtml(d.tecnicoNome) : "Aguardando técnico")} · ${formatarTempo(d.criadoEm)}</span>
+          <div class="acoes">${botaoAcao(d, souTecnico)}</div>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  function botaoAcao(d, souTecnico) {
+    if (souTecnico && d.status === "aberto") {
+      return `<button class="btn-primario" onclick="assumirChamado('${d.id}')">Assumir chamado</button>`;
+    }
+    if (d.status === "em_negociacao" && (d.tecnicoId === usuarioAtual.uid || d.clienteId === usuarioAtual.uid)) {
+      return `<a href="chat.html?demanda=${d.id}"><button class="btn-secundario">Abrir chat</button></a>`;
+    }
+    if (d.status === "resolvido") {
+      return `<span class="mono" style="color:var(--ok); font-size:0.8rem;">concluído</span>`;
+    }
+    return "";
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str || "";
+    return div.innerHTML;
+  }
+</script>
+
+</body>
+</html>
