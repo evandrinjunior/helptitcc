@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meus Atendimentos — HelpTI</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    body { padding-bottom: 70px !important; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #17212B; border-top: 1px solid #263340; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+    .bottom-nav .nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8695A7; font-size: 11px; }
+    .bottom-nav .nav-item.active { color: #4FD1C5; }
+    .bottom-nav .nav-item i { font-size: 18px; margin-bottom: 4px; }
+    
+    .chamado-card { background: var(--surface, #1C2733); border: 1px solid var(--border, #263340); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+    .ticket-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
+    .status-em_negociacao { background: rgba(246, 173, 85, 0.2); color: #F6AD55; }
+    .status-resolvido { background: rgba(104, 211, 145, 0.2); color: #68D391; }
+    
+    .btn-chat { background: var(--accent, #4FD1C5); color: #17212B; padding: 8px 15px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: bold; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-chat:hover { opacity: 0.9; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span class="dot"></span> HelpTI Técnico</div>
+  <div class="user-info">
+    <span id="nome-usuario" style="font-weight: bold; color: var(--accent);">Carregando...</span>
+    <span class="badge-tipo" id="badge-tipo" style="margin-left: 6px; font-size: 0.8rem; background: var(--surface-alt); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border); text-transform: capitalize;">—</span>
+  </div>
+</div>
+
+<div class="feed-container" style="padding: 20px; max-width: 800px; margin: 60px auto 0;">
+  <h2>Meus Atendimentos</h2>
+  <p style="color: #8695A7; margin-bottom: 20px;">Chamados que você assumiu para resolver.</p>
+  
+  <div id="lista-meus-atendimentos">
+    <p style="color: #8695A7;">A carregar atendimentos...</p>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+    <a href="feed.html" class="nav-item"><i class="fas fa-home"></i><span>Início</span></a>
+    <a href="minhas-demandas.html" class="nav-item active"><i class="fas fa-tools"></i><span>Atendimentos</span></a>
+    <a href="chat.html" class="nav-item"><i class="fas fa-comments"></i><span>Chat</span></a>
+    <a href="perfil.html" class="nav-item"><i class="fas fa-user"></i><span>Perfil</span></a>
+</nav>
+
+<script type="module">
+    import { exigirLogin } from "./js/auth.js";
+    import { escutarDemandas, LABEL_STATUS, LABEL_CATEGORIA } from "./js/demandas.js";
+
+    exigirLogin((user, perfil) => {
+        // Se for cliente, não tem acesso a esta tela
+        if (perfil.tipo === "cliente") {
+            window.location.href = "feed.html";
+            return;
+        }
+
+        escutarDemandas((chamados) => {
+            const listaDiv = document.getElementById("lista-meus-atendimentos");
+            listaDiv.innerHTML = "";
+
+            const meusAtendimentos = chamados.filter(c => c.tecnicoId === user.uid);
+
+            if (meusAtendimentos.length === 0) {
+                listaDiv.innerHTML = "<p style='color: #8695A7; text-align: center; padding: 40px;'>Você ainda não assumiu nenhum chamado. Vá ao Feed e clique em 'Assumir Chamado'.</p>";
+                return;
+            }
+
+            meusAtendimentos.forEach(chamado => {
+                const div = document.createElement("div");
+                div.className = "chamado-card";
+                
+                div.innerHTML = `
+                    <div class="ticket-header">
+                        <span style="font-weight: bold; color: #8695A7;">#${chamado.ticketId} • Cliente: ${chamado.clienteNome || 'Desconhecido'}</span>
+                        <span class="badge status-${chamado.status}">${LABEL_STATUS[chamado.status]}</span>
+                    </div>
+                    <h3 style="margin: 5px 0 10px 0;">${chamado.titulo}</h3>
+                    <p style="color: #A0AAB5; font-size: 0.9rem; margin-bottom: 15px;">${chamado.descricao}</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 15px;">
+                        <span style="font-size: 0.85rem; color: #8695A7;"><i class="fas fa-tag"></i> ${LABEL_CATEGORIA[chamado.categoria]}</span>
+                        <a href="chat.html?id=${chamado.id}" class="btn-chat"><i class="fas fa-comments"></i> Abrir Chat</a>
+                    </div>
+                `;
+                listaDiv.appendChild(div);
+            });
+        });
+    });
+</script>
+</body>
+</html> 

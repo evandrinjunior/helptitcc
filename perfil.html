@@ -25,6 +25,11 @@
         border-radius: 12px; padding: 24px; max-width: 600px;
         margin: 30px auto;
     }
+    .btn-sair {
+        background: rgba(255, 107, 107, 0.2); color: #ff6b6b; border: 1px solid #ff6b6b;
+        padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold;
+    }
+    .btn-sair:hover { background: #ff6b6b; color: #fff; }
 </style>
 </head>
 <body>
@@ -35,28 +40,28 @@
   <div class="user-info">
     <span id="nome-usuario" style="font-weight: bold; color: var(--accent);">Carregando...</span>
     <span class="badge-tipo" id="badge-tipo" style="text-transform: capitalize; margin-left: 6px; font-size: 0.8rem; background: var(--surface-alt); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border);">—</span>
-    <button class="btn-sair" id="btn-sair" style="margin-left: 10px;">Sair</button>
+    <button class="btn-sair" id="btn-sair">Sair</button>
   </div>
 </div>
 
-<div class="feed-container">
+<div class="feed-container" style="padding: 20px; margin-top: 60px;">
   <div class="perfil-card">
     <h2>Meus Dados</h2>
-    <p class="sub" style="margin-bottom: 20px;">Informações cadastradas na sua conta.</p>
+    <p class="sub" style="margin-bottom: 20px; color: var(--text-dim, #8695A7);">Informações cadastradas na sua conta.</p>
 
     <div class="campo" style="margin-bottom: 15px;">
-      <label style="display: block; margin-bottom: 5px; color: var(--text-dim);">Nome de Usuário</label>
-      <input type="text" id="perfil-nome" disabled style="width: 100%; padding: 10px; border-radius: 6px; background: var(--surface-alt); border: 1px solid var(--border); color: #fff;">
+      <label style="display: block; margin-bottom: 5px; color: #8695A7;">Nome de Usuário</label>
+      <input type="text" id="perfil-nome" disabled style="width: 100%; padding: 10px; border-radius: 6px; background: var(--surface-alt, #263340); border: 1px solid var(--border, #263340); color: #fff;">
     </div>
 
     <div class="campo" style="margin-bottom: 15px;">
-      <label style="display: block; margin-bottom: 5px; color: var(--text-dim);">E-mail Cadastrado</label>
-      <input type="email" id="perfil-email" disabled style="width: 100%; padding: 10px; border-radius: 6px; background: var(--surface-alt); border: 1px solid var(--border); color: #fff;">
+      <label style="display: block; margin-bottom: 5px; color: #8695A7;">E-mail Cadastrado</label>
+      <input type="email" id="perfil-email" disabled style="width: 100%; padding: 10px; border-radius: 6px; background: var(--surface-alt, #263340); border: 1px solid var(--border, #263340); color: #fff;">
     </div>
 
     <div class="campo" style="margin-bottom: 20px;">
-      <label style="display: block; margin-bottom: 5px; color: var(--text-dim);">Tipo de Perfil</label>
-      <input type="text" id="perfil-tipo" disabled style="width: 100%; padding: 10px; border-radius: 6px; background: var(--surface-alt); border: 1px solid var(--border); color: #fff; text-transform: capitalize;">
+      <label style="display: block; margin-bottom: 5px; color: #8695A7;">Tipo de Perfil</label>
+      <input type="text" id="perfil-tipo" disabled style="width: 100%; padding: 10px; border-radius: 6px; background: var(--surface-alt, #263340); border: 1px solid var(--border, #263340); color: #fff; text-transform: capitalize;">
     </div>
   </div>
 </div>
@@ -68,18 +73,19 @@
 </nav>
 
 <script type="module">
-  import { exigirLogin, logoutUsuario } from "./js/auth.js";
+  // CORREÇÃO: Usando a função correta "deslogar" criada no auth.js
+  import { exigirLogin, deslogar } from "./js/auth.js";
 
-  // Configura o botão de sair
-  document.getElementById("btn-sair").addEventListener("click", logoutUsuario);
+  // Configura o botão de sair corretamente
+  document.getElementById("btn-sair").addEventListener("click", () => {
+    deslogar();
+  });
 
-  // Assim que a página carrega, o exigirLogin garante que os dados do topo apareçam
-  // e entrega as informações ("perfil") para preenchermos os campos do formulário
+  // Assim que a página carrega, preenche os campos do formulário com segurança
   exigirLogin((user, perfil) => {
-    // Preenche os campos do perfil com os dados reais
-    document.getElementById("perfil-nome").value = perfil.nome;
-    document.getElementById("perfil-email").value = user.email;
-    document.getElementById("perfil-tipo").value = perfil.tipo;
+    document.getElementById("perfil-nome").value = perfil.nome || "Não informado";
+    document.getElementById("perfil-email").value = user.email || "Não informado";
+    document.getElementById("perfil-tipo").value = perfil.tipo || "Não informado";
   });
 </script>
 </body>
