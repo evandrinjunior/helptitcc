@@ -34,7 +34,7 @@
 </head>
 <body>
 
-<!-- O cabeçalho com os IDs que o auth.js vai preencher automaticamente -->
+<!-- Cabeçalho -->
 <div class="topbar">
   <div class="logo"><span class="dot"></span> HelpTI</div>
   <div class="user-info">
@@ -68,21 +68,27 @@
 
 <nav class="bottom-nav">
     <a href="feed.html" class="nav-item"><i class="fas fa-home"></i><span>Início</span></a>
+    <a href="minhas-demandas.html" class="nav-item" id="nav-demandas" style="display:none;"><i class="fas fa-tools"></i><span>Atendimentos</span></a>
     <a href="chat.html" class="nav-item"><i class="fas fa-comments"></i><span>Chat</span></a>
     <a href="perfil.html" class="nav-item active"><i class="fas fa-user"></i><span>Perfil</span></a>
 </nav>
 
 <script type="module">
-  // CORREÇÃO: Usando a função correta "deslogar" criada no auth.js
   import { exigirLogin, deslogar } from "./js/auth.js";
 
-  // Configura o botão de sair corretamente
+  // Configura o botão de sair
   document.getElementById("btn-sair").addEventListener("click", () => {
     deslogar();
   });
 
-  // Assim que a página carrega, preenche os campos do formulário com segurança
+  // Carrega os dados e valida o menu do técnico
   exigirLogin((user, perfil) => {
+    // Se for técnico, mostra o menu de Atendimentos
+    if (perfil.tipo === "tecnico") {
+        document.getElementById("nav-demandas").style.display = "flex";
+    }
+
+    // Preenche os campos de perfil
     document.getElementById("perfil-nome").value = perfil.nome || "Não informado";
     document.getElementById("perfil-email").value = user.email || "Não informado";
     document.getElementById("perfil-tipo").value = perfil.tipo || "Não informado";

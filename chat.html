@@ -52,6 +52,8 @@
 
 <nav class="bottom-nav">
     <a href="feed.html" class="nav-item"><i class="fas fa-home"></i><span>Início</span></a>
+    <!-- Botão de atendimentos adicionado e escondido por padrão -->
+    <a href="minhas-demandas.html" class="nav-item" id="nav-demandas" style="display:none;"><i class="fas fa-tools"></i><span>Atendimentos</span></a>
     <a href="chat.html" class="nav-item active"><i class="fas fa-comments"></i><span>Chat</span></a>
     <a href="perfil.html" class="nav-item"><i class="fas fa-user"></i><span>Perfil</span></a>
 </nav>
@@ -72,6 +74,9 @@
     const avisoChat = document.getElementById("aviso-chat");
 
     exigirLogin((user, perfil) => {
+    if (perfil.tipo === "tecnico") {
+        document.getElementById("nav-demandas").style.display = "flex";
+    }
         meuUsuarioId = user.uid;
         meuNome = perfil.nome;
 
