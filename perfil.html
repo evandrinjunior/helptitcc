@@ -3,96 +3,164 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Meu Perfil — HelpTI</title>
+<title>Perfil — HelpTI</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
     body { padding-bottom: 70px !important; }
-    .bottom-nav {
-        position: fixed; bottom: 0; left: 0; width: 100%;
-        background-color: #17212B; border-top: 1px solid #263340;
-        display: flex; justify-content: space-around; padding: 10px 0;
-        z-index: 1000;
-    }
-    .bottom-nav .nav-item {
-        display: flex; flex-direction: column; align-items: center;
-        text-decoration: none; color: #8695A7; font-size: 11px;
-    }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #17212B; border-top: 1px solid #263340; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+    .bottom-nav .nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8695A7; font-size: 11px; position: relative; }
     .bottom-nav .nav-item.active { color: #4FD1C5; }
     .bottom-nav .nav-item i { font-size: 18px; margin-bottom: 4px; }
-    .perfil-card {
-        background: var(--surface); border: 1px solid var(--border);
-        border-radius: 12px; padding: 24px; max-width: 600px;
-        margin: 30px auto;
-    }
-    .btn-sair {
-        background: rgba(255, 107, 107, 0.2); color: #ff6b6b; border: 1px solid #ff6b6b;
-        padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; font-weight: bold;
-    }
-    .btn-sair:hover { background: #ff6b6b; color: #fff; }
+    
+    .badge-notificacao { position: absolute; top: -4px; right: 22px; background-color: #FF4757; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #17212B; display: none; }
+
+    /* Novo Layout do Perfil */
+    .perfil-container { max-width: 600px; margin: 80px auto 30px; background: var(--surface, #1C2733); border: 1px solid var(--border, #263340); border-radius: 12px; padding: 40px 30px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .avatar { font-size: 5rem; color: var(--accent); margin-bottom: 15px; }
+    .nome { font-size: 1.8rem; color: #fff; margin: 0 0 5px 0; }
+    .email { color: #8695A7; margin: 0 0 15px 0; font-size: 0.95rem; }
+    .badge-tipo { display: inline-block; background: var(--surface-alt); padding: 6px 16px; border-radius: 20px; border: 1px solid var(--border); text-transform: capitalize; font-size: 0.9rem; color: #fff; margin-bottom: 30px; font-weight: bold; }
+    
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+    .stat-card { background: var(--surface-alt); border: 1px solid var(--border); border-radius: 8px; padding: 20px; text-align: center; }
+    .stat-valor { font-size: 2.2rem; font-weight: bold; color: #fff; margin-bottom: 5px; }
+    .stat-label { color: #8695A7; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+    .stat-stars { color: #FFD700; font-size: 1.2rem; margin-top: 5px; }
+
+    .btn-sair { background: transparent; color: #FF4757; border: 1px solid #FF4757; padding: 12px 25px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 1rem; width: 100%; transition: 0.2s; }
+    .btn-sair:hover { background: #FF4757; color: white; }
 </style>
 </head>
 <body>
 
-<!-- Cabeçalho -->
 <div class="topbar">
   <div class="logo"><span class="dot"></span> HelpTI</div>
-  <div class="user-info">
-    <span id="nome-usuario" style="font-weight: bold; color: var(--accent);">Carregando...</span>
-    <span class="badge-tipo" id="badge-tipo" style="text-transform: capitalize; margin-left: 6px; font-size: 0.8rem; background: var(--surface-alt); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border);">—</span>
-    <button class="btn-sair" id="btn-sair">Sair</button>
-  </div>
 </div>
 
-<div class="feed-container" style="padding: 20px; margin-top: 60px;">
-  <div class="perfil-card">
-    <h2>Meus Dados</h2>
-    <p class="sub" style="margin-bottom: 20px; color: var(--text-dim, #8695A7);">Informações cadastradas na sua conta.</p>
+<div class="feed-container" style="padding: 0 20px;">
+    <div class="perfil-container">
+        <i class="fas fa-user-circle avatar"></i>
+        <h2 class="nome" id="perfil-nome">Carregando...</h2>
+        <p class="email" id="perfil-email">...</p>
+        <div class="badge-tipo" id="perfil-tipo">...</div>
 
-    <div class="campo" style="margin-bottom: 15px;">
-      <label style="display: block; margin-bottom: 5px; color: #8695A7;">Nome de Usuário</label>
-      <input type="text" id="perfil-nome" disabled style="width: 100%; padding: 10px; border-radius: 6px; background: var(--surface-alt, #263340); border: 1px solid var(--border, #263340); color: #fff;">
+        <!-- Área de Estatísticas -->
+        <div class="stats-grid" id="stats-area" style="display: none;">
+            <!-- Cartão 1: Avaliação (Oculto para cliente) -->
+            <div class="stat-card" id="card-avaliacao">
+                <div class="stat-valor" id="stat-nota">-</div>
+                <div class="stat-stars" id="stat-estrelas"></div>
+                <div class="stat-label" style="margin-top: 8px;">Média de Avaliação</div>
+            </div>
+            <!-- Cartão 2: Atendimentos Resolvidos -->
+            <div class="stat-card">
+                <div class="stat-valor" id="stat-total">0</div>
+                <div class="stat-label">Chamados Resolvidos</div>
+            </div>
+        </div>
+<!-- Botão de Relatórios (Aparece via JavaScript) -->
+        <a href="relatorios.html" id="btn-relatorios" style="display: none; background: var(--surface-alt); color: var(--accent); border: 1px solid var(--accent); padding: 12px 25px; border-radius: 6px; font-weight: bold; text-decoration: none; margin-bottom: 15px; width: 100%; box-sizing: border-box; font-size: 1rem;"><i class="fas fa-file-pdf"></i> Gerar Relatório de Atendimentos</a>
+        <button id="btn-logout" class="btn-sair"><i class="fas fa-sign-out-alt"></i> Sair da Conta</button>
     </div>
-
-    <div class="campo" style="margin-bottom: 15px;">
-      <label style="display: block; margin-bottom: 5px; color: #8695A7;">E-mail Cadastrado</label>
-      <input type="email" id="perfil-email" disabled style="width: 100%; padding: 10px; border-radius: 6px; background: var(--surface-alt, #263340); border: 1px solid var(--border, #263340); color: #fff;">
-    </div>
-
-    <div class="campo" style="margin-bottom: 20px;">
-      <label style="display: block; margin-bottom: 5px; color: #8695A7;">Tipo de Perfil</label>
-      <input type="text" id="perfil-tipo" disabled style="width: 100%; padding: 10px; border-radius: 6px; background: var(--surface-alt, #263340); border: 1px solid var(--border, #263340); color: #fff; text-transform: capitalize;">
-    </div>
-  </div>
 </div>
 
+<!-- MENU INFERIOR -->
 <nav class="bottom-nav">
     <a href="feed.html" class="nav-item"><i class="fas fa-home"></i><span>Início</span></a>
     <a href="minhas-demandas.html" class="nav-item" id="nav-demandas" style="display:none;"><i class="fas fa-tools"></i><span>Atendimentos</span></a>
-    <a href="chat.html" class="nav-item"><i class="fas fa-comments"></i><span>Chat</span></a>
+    <a href="chat.html" class="nav-item">
+        <span class="badge-notificacao" id="badge-chat"></span>
+        <i class="fas fa-comments"></i>
+        <span>Chat</span>
+    </a>
     <a href="perfil.html" class="nav-item active"><i class="fas fa-user"></i><span>Perfil</span></a>
 </nav>
 
 <script type="module">
-  import { exigirLogin, deslogar } from "./js/auth.js";
+    import { exigirLogin, deslogar } from "./js/auth.js";
+    import { escutarDemandas } from "./js/demandas.js";
 
-  // Configura o botão de sair
-  document.getElementById("btn-sair").addEventListener("click", () => {
-    deslogar();
-  });
-
-  // Carrega os dados e valida o menu do técnico
-  exigirLogin((user, perfil) => {
-    // Se for técnico, mostra o menu de Atendimentos
-    if (perfil.tipo === "tecnico") {
+    exigirLogin((user, perfil) => {
+        // Preenche os dados básicos no layout novo
+        document.getElementById("perfil-nome").textContent = perfil.nome;
+        document.getElementById("perfil-email").textContent = user.email;
+        
+        const iconeTipo = perfil.tipo === 'tecnico' ? 'fa-wrench' : 'fa-user';
+        document.getElementById("perfil-tipo").innerHTML = `<i class="fas ${iconeTipo}"></i> ${perfil.tipo}`;
         document.getElementById("nav-demandas").style.display = "flex";
-    }
+            document.getElementById("stats-area").style.display = "grid"; 
+            document.getElementById("btn-relatorios").style.display = "inline-block"; // ADICIONE ESTA LINHA AQUI
 
-    // Preenche os campos de perfil
-    document.getElementById("perfil-nome").value = perfil.nome || "Não informado";
-    document.getElementById("perfil-email").value = user.email || "Não informado";
-    document.getElementById("perfil-tipo").value = perfil.tipo || "Não informado";
-  });
+        // Configura a exibição dos cartões com base no perfil
+        if (perfil.tipo === "tecnico") {
+            document.getElementById("nav-demandas").style.display = "flex";
+            document.getElementById("stats-area").style.display = "grid"; 
+        } else {
+            document.getElementById("stats-area").style.display = "grid";
+            document.getElementById("card-avaliacao").style.display = "none"; 
+            document.getElementById("stats-area").style.gridTemplateColumns = "1fr"; 
+        }
+
+        // Faz os cálculos em tempo real lendo o banco de dados
+        escutarDemandas((chamados) => {
+            let temNotificacao = false;
+            let finalizados = 0;
+            let avaliacoes = [];
+
+            chamados.forEach(c => {
+                // Notificação de chat
+                if ((c.clienteId === user.uid || c.tecnicoId === user.uid) && c.status !== "aberto") {
+                    if (c.ultimaMensagemDe && c.ultimaMensagemDe !== user.uid && c.lida === false) {
+                        temNotificacao = true;
+                    }
+                }
+
+                // Estatísticas do Técnico
+                if (perfil.tipo === "tecnico" && c.tecnicoId === user.uid && c.status === "resolvido") {
+                    finalizados++;
+                    if (c.avaliacao) avaliacoes.push(c.avaliacao);
+                }
+                
+                // Estatísticas do Cliente
+                if (perfil.tipo === "cliente" && c.clienteId === user.uid && c.status === "resolvido") {
+                    finalizados++;
+                }
+            });
+
+            // Atualiza bolinha do chat
+            document.getElementById("badge-chat").style.display = temNotificacao ? "block" : "none";
+            
+            // Atualiza número de chamados
+            document.getElementById("stat-total").textContent = finalizados;
+
+            // Calcula e desenha as estrelas da média (Apenas Técnico)
+            if (perfil.tipo === "tecnico") {
+                if (avaliacoes.length > 0) {
+                    const soma = avaliacoes.reduce((a, b) => a + b, 0);
+                    const media = (soma / avaliacoes.length).toFixed(1);
+                    document.getElementById("stat-nota").textContent = media;
+                    
+                    let estrelasHtml = "";
+                    for(let i=1; i<=5; i++) {
+                        if(i <= Math.round(media)) {
+                            estrelasHtml += '<i class="fas fa-star"></i>';
+                        } else {
+                            estrelasHtml += '<i class="far fa-star" style="color: #4A5568;"></i>';
+                        }
+                    }
+                    document.getElementById("stat-estrelas").innerHTML = estrelasHtml;
+                } else {
+                    document.getElementById("stat-nota").textContent = "-";
+                    document.getElementById("stat-estrelas").innerHTML = '<span style="color: #8695A7; font-size: 0.9rem;">Sem avaliações</span>';
+                }
+            }
+        });
+
+        document.getElementById("btn-logout").addEventListener("click", () => {
+            deslogar();
+        });
+    });
 </script>
 </body>
 </html>

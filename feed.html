@@ -9,9 +9,11 @@
 <style>
     body { padding-bottom: 70px !important; }
     .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #17212B; border-top: 1px solid #263340; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
-    .bottom-nav .nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8695A7; font-size: 11px; }
+    .bottom-nav .nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8695A7; font-size: 11px; position: relative; }
     .bottom-nav .nav-item.active { color: #4FD1C5; }
     .bottom-nav .nav-item i { font-size: 18px; margin-bottom: 4px; }
+    
+    .badge-notificacao { position: absolute; top: -4px; right: 22px; background-color: #FF4757; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #17212B; display: none; }
     
     .chamado-card { background: var(--surface, #1C2733); border: 1px solid var(--border, #263340); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
     .ticket-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
@@ -25,7 +27,6 @@
     .btn-assumir { background: #F6AD55; color: #17212B; }
     .btn-acao:hover { opacity: 0.9; }
 
-    /* Estilos novos para os filtros */
     .filtros-container { display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
     .btn-filtro { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: #8695A7; cursor: pointer; font-size: 0.85rem; font-weight: bold; transition: 0.2s; white-space: nowrap; }
     .btn-filtro.active { background: var(--accent); color: #17212B; border-color: var(--accent); }
@@ -58,7 +59,6 @@
 
   <h2 id="titulo-feed">Mural de Chamados Abertos</h2>
   
-  <!-- Barra de Filtros -->
   <div class="filtros-container" id="filtros-container">
       <button class="btn-filtro active" data-cat="todos">Todos</button>
       <button class="btn-filtro" data-cat="hardware"><i class="fas fa-desktop"></i> Hardware</button>
@@ -68,14 +68,16 @@
   <div id="lista-chamados">
     <p style="color: #8695A7;">Carregando chamados...</p>
   </div>
-
 </div>
 
 <nav class="bottom-nav">
     <a href="feed.html" class="nav-item active"><i class="fas fa-home"></i><span>Início</span></a>
-    <!-- Atalho para os atendimentos (só aparece para técnicos) -->
     <a href="minhas-demandas.html" class="nav-item" id="nav-demandas" style="display:none;"><i class="fas fa-tools"></i><span>Atendimentos</span></a>
-    <a href="chat.html" class="nav-item"><i class="fas fa-comments"></i><span>Chat</span></a>
+    <a href="chat.html" class="nav-item">
+        <span class="badge-notificacao" id="badge-chat"></span>
+        <i class="fas fa-comments"></i>
+        <span>Chat</span>
+    </a>
     <a href="perfil.html" class="nav-item"><i class="fas fa-user"></i><span>Perfil</span></a>
 </nav>
 
@@ -92,16 +94,14 @@
         meuPerfil = perfil;
         meuId = user.uid;
 
-        // Ajustes na interface dependendo de quem logou
         if (perfil.tipo === "cliente") {
             document.getElementById("painel-criar-chamado").style.display = "block";
-            document.getElementById("titulo-feed").textContent = "Meus Chamados"; // Muda o título para o cliente
+            document.getElementById("titulo-feed").textContent = "Meus Chamados";
         } else if (perfil.tipo === "tecnico") {
             document.getElementById("nav-demandas").style.display = "flex";
-            document.getElementById("titulo-feed").textContent = "Mural de Chamados Abertos"; // Título para o técnico
+            document.getElementById("titulo-feed").textContent = "Mural de Chamados Abertos";
         }
 
-        // Configura o clique nos botões de filtro
         document.querySelectorAll(".btn-filtro").forEach(btn => {
             btn.addEventListener("click", (e) => {
                 document.querySelectorAll(".btn-filtro").forEach(b => b.classList.remove("active"));
@@ -114,25 +114,30 @@
         escutarDemandas((chamados) => {
             todosChamados = chamados;
             renderizarChamados();
+            
+            let temNotificacao = false;
+            chamados.forEach(c => {
+                if ((c.clienteId === meuId || c.tecnicoId === meuId) && c.status !== "aberto") {
+                    if (c.ultimaMensagemDe && c.ultimaMensagemDe !== meuId && c.lida === false) {
+                        temNotificacao = true;
+                    }
+                }
+            });
+            document.getElementById("badge-chat").style.display = temNotificacao ? "block" : "none";
         });
     });
 
     function renderizarChamados() {
         const listaDiv = document.getElementById("lista-chamados");
         listaDiv.innerHTML = "";
-
         let chamadosFiltrados = [];
 
-        // LÓGICA DE FILTRAGEM INTELIGENTE
         if (meuPerfil.tipo === "cliente") {
-            // O cliente vê APENAS os seus próprios chamados (não importa o status)
             chamadosFiltrados = todosChamados.filter(c => c.clienteId === meuId);
         } else {
-            // O técnico vê APENAS os chamados que estão "abertos" e disponíveis
             chamadosFiltrados = todosChamados.filter(c => c.status === "aberto");
         }
 
-        // Aplica o filtro dos botões (Hardware/Software)
         if (filtroAtual !== "todos") {
             chamadosFiltrados = chamadosFiltrados.filter(c => c.categoria === filtroAtual);
         }
@@ -146,6 +151,17 @@
             const div = document.createElement("div");
             div.className = "chamado-card";
             
+            let infoTecnico = "";
+            if (chamado.tecnicoNome) {
+                const avaliacoes = todosChamados.filter(c => c.tecnicoId === chamado.tecnicoId && c.avaliacao);
+                let mediaTxt = "Novo";
+                if (avaliacoes.length > 0) {
+                    const soma = avaliacoes.reduce((acc, curr) => acc + curr.avaliacao, 0);
+                    mediaTxt = (soma / avaliacoes.length).toFixed(1);
+                }
+                infoTecnico = ` • Técnico: ${chamado.tecnicoNome} <span style="color:#FFD700;">(⭐ ${mediaTxt})</span>`;
+            }
+
             let botoesAcao = `<a href="chat.html?id=${chamado.id}" class="btn-acao btn-chat"><i class="fas fa-comments"></i> Abrir Chat</a>`;
 
             if (meuPerfil.tipo === "tecnico" && chamado.status === "aberto") {
@@ -154,7 +170,7 @@
 
             div.innerHTML = `
                 <div class="ticket-header">
-                    <span style="font-weight: bold; color: #8695A7;">#${chamado.ticketId} ${chamado.tecnicoNome ? '• Técnico: ' + chamado.tecnicoNome : ''}</span>
+                    <span style="font-weight: bold; color: #8695A7; font-size: 0.9rem;">#${chamado.ticketId}${infoTecnico}</span>
                     <span class="badge status-${chamado.status}">${LABEL_STATUS[chamado.status]}</span>
                 </div>
                 <h3 style="margin: 5px 0 10px 0;">${chamado.titulo}</h3>
@@ -167,13 +183,12 @@
             listaDiv.appendChild(div);
         });
 
-        // Recria os eventos de clique para os botões "Assumir" acabados de desenhar
         document.querySelectorAll(".btn-assumir").forEach(btn => {
             btn.addEventListener("click", async (e) => {
                 const idDemanda = e.currentTarget.getAttribute("data-id");
                 try {
                     await assumirDemanda(idDemanda, meuId, meuPerfil.nome);
-                    alert("Chamado assumido com sucesso! Vá até a aba 'Atendimentos' para iniciar a resolução.");
+                    alert("Chamado assumido com sucesso!");
                 } catch (err) {
                     alert("Erro ao assumir chamado: " + err.message);
                 }

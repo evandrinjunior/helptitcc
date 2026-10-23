@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relatórios — HelpTI</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    body { padding-bottom: 70px !important; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #17212B; border-top: 1px solid #263340; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+    .bottom-nav .nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8695A7; font-size: 11px; }
+    .bottom-nav .nav-item i { font-size: 18px; margin-bottom: 4px; }
+    
+    .card-filtro { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+    .input-data { background: var(--surface-alt); border: 1px solid var(--border); color: #fff; padding: 10px; border-radius: 6px; width: 100%; margin-bottom: 10px; color-scheme: dark; }
+    .btn-gerar { background: var(--accent); color: #17212B; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
+    .btn-imprimir { background: #4A5568; color: #fff; border: none; padding: 12px; width: 100%; border-radius: 6px; font-weight: bold; cursor: pointer; display: none; }
+    
+    .relatorio-tabela { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9rem; }
+    .relatorio-tabela th, .relatorio-tabela td { border: 1px solid var(--border); padding: 10px; text-align: left; }
+    .relatorio-tabela th { background: var(--surface-alt); color: var(--accent); }
+
+    /* MÁGICA DO PDF: Esconde o layout do site e formata para folha A4 */
+    @media print {
+        .topbar, .bottom-nav, .card-filtro, .btn-imprimir, .no-print { display: none !important; }
+        body { background: white !important; color: black !important; padding: 0 !important; }
+        .feed-container { margin: 0 !important; padding: 0 !important; max-width: 100%; }
+        .relatorio-tabela th, .relatorio-tabela td { border: 1px solid #000; color: black; }
+        .relatorio-tabela th { background: #f0f0f0; color: black; }
+        h2 { color: black !important; text-align: center; }
+    }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span class="dot"></span> HelpTI</div>
+</div>
+
+<div class="feed-container" style="padding: 20px; max-width: 800px; margin: 60px auto 0;">
+    
+    <button class="no-print" onclick="window.history.back()" style="background: none; border: none; color: var(--accent); font-size: 1.2rem; cursor: pointer; margin-bottom: 15px;"><i class="fas fa-arrow-left"></i> Voltar</button>
+
+    <div class="card-filtro no-print">
+        <h3 style="margin-top: 0;"><i class="fas fa-calendar-alt"></i> Gerador de Relatório</h3>
+        <p style="color: #8695A7; font-size: 0.9rem; margin-bottom: 15px;">Filtre seus chamados resolvidos para gerar um extrato de prestação de contas.</p>
+        
+        <label style="font-size: 0.85rem; color: #8695A7;">Período (Opcional):</label>
+        <div style="display: flex; gap: 10px;">
+            <input type="date" id="data-inicio" class="input-data">
+            <input type="date" id="data-fim" class="input-data">
+        </div>
+        
+        <button id="btn-gerar" class="btn-gerar"><i class="fas fa-file-alt"></i> Processar Dados</button>
+        <button id="btn-imprimir" class="btn-imprimir" onclick="window.print()"><i class="fas fa-print"></i> Salvar como PDF / Imprimir</button>
+    </div>
+
+    <!-- O documento que vai para o PDF aparece aqui -->
+    <div id="documento-impresso" style="display: none;">
+        <h2>Extrato de Atendimentos - HelpTI</h2>
+        <p><strong>Técnico Responsável:</strong> <span id="relatorio-nome"></span></p>
+        <p><strong>Data da Emissão:</strong> <span id="relatorio-hoje"></span></p>
+        <hr style="border: 1px solid #263340; margin: 20px 0;">
+        
+        <table class="relatorio-tabela">
+            <thead>
+                <tr>
+                    <th>Ref.</th>
+                    <th>Cliente</th>
+                    <th>Serviço (Problema)</th>
+                    <th>Avaliação</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-corpo">
+                <!-- Linhas inseridas pelo JavaScript -->
+            </tbody>
+        </table>
+        
+        <h3 style="text-align: right; margin-top: 20px; color: var(--accent);">Total Resolvidos: <span id="total-resolvidos">0</span></h3>
+    </div>
+
+</div>
+
+<!-- MENU INFERIOR -->
+<nav class="bottom-nav">
+    <a href="feed.html" class="nav-item"><i class="fas fa-home"></i><span>Início</span></a>
+    <a href="minhas-demandas.html" class="nav-item"><i class="fas fa-tools"></i><span>Atendimentos</span></a>
+    <a href="chat.html" class="nav-item"><i class="fas fa-comments"></i><span>Chat</span></a>
+    <a href="perfil.html" class="nav-item"><i class="fas fa-user"></i><span>Perfil</span></a>
+</nav>
+
+<script type="module">
+    import { exigirLogin } from "./js/auth.js";
+    import { escutarDemandas } from "./js/demandas.js";
+
+    exigirLogin((user, perfil) => {
+        if (perfil.tipo !== "tecnico") {
+            alert("Acesso negado. Apenas técnicos podem gerar relatórios.");
+            window.location.href = "perfil.html";
+            return;
+        }
+
+        document.getElementById("relatorio-nome").textContent = perfil.nome;
+        const hoje = new Date().toLocaleDateString('pt-BR');
+        document.getElementById("relatorio-hoje").textContent = hoje;
+
+        document.getElementById("btn-gerar").addEventListener("click", () => {
+            escutarDemandas((chamados) => {
+                const tbody = document.getElementById("tabela-corpo");
+                tbody.innerHTML = "";
+
+                // Puxa apenas os chamados que você resolveu
+                let meusResolvidos = chamados.filter(c => c.tecnicoId === user.uid && c.status === "resolvido");
+
+                if (meusResolvidos.length === 0) {
+                    alert("Você ainda não possui chamados finalizados para gerar relatório.");
+                    return;
+                }
+
+                meusResolvidos.forEach(chamado => {
+                    const tr = document.createElement("tr");
+                    const nota = chamado.avaliacao ? `${chamado.avaliacao} Estrelas` : 'Sem nota';
+                    
+                    tr.innerHTML = `
+                        <td>#${chamado.ticketId || 'N/A'}</td>
+                        <td>${chamado.clienteNome}</td>
+                        <td>${chamado.titulo}</td>
+                        <td>${nota}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                document.getElementById("total-resolvidos").textContent = meusResolvidos.length;
+                document.getElementById("documento-impresso").style.display = "block";
+                document.getElementById("btn-imprimir").style.display = "block";
+            });
+        });
+    });
+</script>
+</body>
+</html>
