@@ -31,8 +31,12 @@
           <label for="senha">Senha</label>
           <input type="password" id="senha" required autocomplete="current-password" placeholder="••••••••">
         </div>
-        <div class="erro-msg" id="erro" style="color:var(--erro); font-size:0.85rem; margin-bottom:12px;"></div>
+        <div class="erro-msg" id="erro" style="color:var(--erro, #FF4757); font-size:0.85rem; margin-bottom:12px;"></div>
+        
         <button type="submit" class="btn-primario" id="btn-entrar" style="width:100%;">Entrar</button>
+        
+        <!-- Botão de esqueci a senha adicionado aqui -->
+        <a href="#" id="btn-esqueci-senha" style="color: var(--accent, #4FD1C5); font-size: 0.85rem; text-decoration: none; display: block; text-align: center; margin-top: 15px;">Esqueci minha senha</a>
       </form>
 
       <!-- Botão do Google -->
@@ -48,6 +52,8 @@
 
 <script type="module">
   import { logarUsuario, loginComGoogle } from "./js/auth.js";
+  import { auth } from "./js/firebase-config.js";
+  import { sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
   // Login normal
   document.getElementById("form-login").addEventListener("submit", async (e) => {
@@ -80,6 +86,26 @@
     } catch (err) {
       alert("Erro no Google: " + err.message);
       btnGoogle.innerHTML = '<i class="fab fa-google" style="color: #DB4437; font-size: 1.2rem;"></i> Entrar com o Google';
+    }
+  });
+
+  // Lógica de Recuperação de Senha
+  document.getElementById("btn-esqueci-senha").addEventListener("click", async (e) => {
+    e.preventDefault();
+    const inputEmail = document.getElementById("email").value.trim(); 
+    const erroDiv = document.getElementById("erro");
+    
+    if (!inputEmail) {
+        if (erroDiv) erroDiv.textContent = "Por favor, digite seu e-mail no campo acima antes de clicar em 'Esqueci minha senha'.";
+        return;
+    }
+    
+    try {
+        await sendPasswordResetEmail(auth, inputEmail);
+        alert("E-mail de recuperação enviado! Verifique sua caixa de entrada e a pasta de spam.");
+        if (erroDiv) erroDiv.textContent = "";
+    } catch (error) {
+        if (erroDiv) erroDiv.textContent = "Erro ao enviar o e-mail. Verifique se o endereço está correto e cadastrado no sistema.";
     }
   });
 </script>
