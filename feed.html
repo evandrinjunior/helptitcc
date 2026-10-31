@@ -83,12 +83,13 @@
 
 <script type="module">
     import { exigirLogin } from "./js/auth.js";
-    import { escutarDemandas, criarDemanda, assumirDemanda, LABEL_STATUS, LABEL_CATEGORIA } from "./js/demandas.js";
+    import { escutarDemandas, criarDemanda, assumirDemanda, atualizarDemanda, excluirDemanda, LABEL_STATUS, LABEL_CATEGORIA } from "./js/demandas.js";
 
     let meuPerfil = null;
     let meuId = null;
     let todosChamados = []; 
     let filtroAtual = "todos"; 
+    let editandoId = null; 
 
     exigirLogin((user, perfil) => {
         meuPerfil = perfil;
@@ -135,6 +136,7 @@
         if (meuPerfil.tipo === "cliente") {
             chamadosFiltrados = todosChamados.filter(c => c.clienteId === meuId);
         } else {
+            // O técnico pode ver todos no mural, mas vamos manter a lógica de ver só os que não foram assumidos por outros
             chamadosFiltrados = todosChamados.filter(c => c.status === "aberto");
         }
 
@@ -146,6 +148,24 @@
             listaDiv.innerHTML = "<p style='color: #8695A7; text-align: center; padding: 20px;'>Nenhum chamado para mostrar no momento.</p>";
             return;
         }
+
+        // ==========================================
+        // LÓGICA DE ORDENAÇÃO: Abertos no topo!
+        // ==========================================
+        const ordemStatus = { "aberto": 1, "em_negociacao": 2, "resolvido": 3 };
+        
+        chamadosFiltrados.sort((a, b) => {
+            const pesoA = ordemStatus[a.status] || 4;
+            const pesoB = ordemStatus[b.status] || 4;
+            
+            // Se o status for igual, ordena pelo ID do ticket (mantém a ordem cronológica)
+            if (pesoA === pesoB) {
+                return (b.ticketId || 0) - (a.ticketId || 0); 
+            }
+            // Retorna a ordem pelo status
+            return pesoA - pesoB;
+        });
+        // ==========================================
 
         chamadosFiltrados.forEach(chamado => {
             const div = document.createElement("div");
@@ -162,22 +182,33 @@
                 infoTecnico = ` • Técnico: ${chamado.tecnicoNome} <span style="color:#FFD700;">(⭐ ${mediaTxt})</span>`;
             }
 
+            // Etiqueta "Editado" se o chamado possuir a flag "editado" como true
+            let tagEditado = chamado.editado 
+                ? `<span style="font-size: 0.7rem; background: rgba(255, 255, 255, 0.1); color: #8695A7; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: normal; border: 1px solid #263340;">(Editado)</span>` 
+                : "";
+
             let botoesAcao = `<a href="chat.html?id=${chamado.id}" class="btn-acao btn-chat"><i class="fas fa-comments"></i> Abrir Chat</a>`;
 
             if (meuPerfil.tipo === "tecnico" && chamado.status === "aberto") {
                 botoesAcao = `<button class="btn-acao btn-assumir" data-id="${chamado.id}"><i class="fas fa-handshake"></i> Assumir Chamado</button> ` + botoesAcao;
+            } else if (meuPerfil.tipo === "cliente" && chamado.status === "aberto") {
+                botoesAcao = `
+                    <button class="btn-acao btn-editar" data-id="${chamado.id}" style="background: #E2E8F0; color: #17212B;"><i class="fas fa-edit"></i> Editar</button>
+                    <button class="btn-acao btn-excluir" data-id="${chamado.id}" style="background: #FF4757; color: white;"><i class="fas fa-trash"></i> Excluir</button>
+                ` + botoesAcao;
             }
 
             div.innerHTML = `
                 <div class="ticket-header">
                     <span style="font-weight: bold; color: #8695A7; font-size: 0.9rem;">#${chamado.ticketId}${infoTecnico}</span>
-                    <span class="badge status-${chamado.status}">${LABEL_STATUS[chamado.status]}</span>
+                    <span class="badge status-${chamado.status}">${LABEL_STATUS[chamado.status] || chamado.status}</span>
                 </div>
-                <h3 style="margin: 5px 0 10px 0;">${chamado.titulo}</h3>
+                <!-- Aqui o Título recebe a etiqueta caso tenha sido editado -->
+                <h3 style="margin: 5px 0 10px 0; color: white; display: flex; align-items: center;">${chamado.titulo} ${tagEditado}</h3>
                 <p style="color: #A0AAB5; font-size: 0.9rem; margin-bottom: 15px;">${chamado.descricao}</p>
                 <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 15px;">
-                    <span style="font-size: 0.85rem; color: #8695A7;"><i class="fas fa-tag"></i> ${LABEL_CATEGORIA[chamado.categoria]}</span>
-                    <div>${botoesAcao}</div>
+                    <span style="font-size: 0.85rem; color: #8695A7;"><i class="fas fa-tag"></i> ${LABEL_CATEGORIA[chamado.categoria] || chamado.categoria}</span>
+                    <div style="display: flex; gap: 8px;">${botoesAcao}</div>
                 </div>
             `;
             listaDiv.appendChild(div);
@@ -194,6 +225,42 @@
                 }
             });
         });
+
+        document.querySelectorAll(".btn-excluir").forEach(btn => {
+            btn.addEventListener("click", async (e) => {
+                const idDemanda = e.currentTarget.getAttribute("data-id");
+                if (confirm("Tem certeza que deseja excluir este chamado?")) {
+                    try {
+                        await excluirDemanda(idDemanda);
+                    } catch (err) {
+                        alert("Erro ao excluir: " + err.message);
+                    }
+                }
+            });
+        });
+
+        document.querySelectorAll(".btn-editar").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                const idDemanda = e.currentTarget.getAttribute("data-id");
+                const chamadoData = todosChamados.find(c => c.id === idDemanda);
+                if (!chamadoData) return;
+                
+                document.getElementById("titulo").value = chamadoData.titulo;
+                document.getElementById("descricao").value = chamadoData.descricao;
+                document.getElementById("categoria").value = chamadoData.categoria;
+                
+                editandoId = idDemanda;
+                
+                const btnSubmit = document.querySelector("#form-chamado button[type='submit']");
+                if (btnSubmit) {
+                    btnSubmit.textContent = "Salvar Alterações";
+                    btnSubmit.style.background = "#F6AD55"; 
+                    btnSubmit.style.color = "#17212B";
+                }
+                
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
     }
 
     const formChamado = document.getElementById("form-chamado");
@@ -201,25 +268,36 @@
         formChamado.addEventListener("submit", async (e) => {
             e.preventDefault();
             const btn = e.target.querySelector("button");
-            btn.textContent = "Publicando...";
+            btn.textContent = "Processando...";
             btn.disabled = true;
 
             const dados = {
                 titulo: document.getElementById("titulo").value,
                 descricao: document.getElementById("descricao").value,
-                categoria: document.getElementById("categoria").value,
-                clienteId: meuId,
-                clienteNome: meuPerfil.nome
+                categoria: document.getElementById("categoria").value
             };
 
             try {
-                await criarDemanda(dados);
+                if (editandoId) {
+                    // Adiciona a flag dizendo que foi editado no banco
+                    dados.editado = true;
+                    await atualizarDemanda(editandoId, dados);
+                    editandoId = null;
+                    alert("Chamado atualizado com sucesso!");
+                } else {
+                    dados.clienteId = meuId;
+                    dados.clienteNome = meuPerfil.nome;
+                    await criarDemanda(dados);
+                }
                 e.target.reset();
             } catch (error) {
-                alert("Erro ao publicar: " + error.message);
+                alert("Erro ao salvar: " + error.message);
             } finally {
                 btn.textContent = "Publicar chamado";
+                btn.style.background = "var(--accent)";
+                btn.style.color = "#17212B";
                 btn.disabled = false;
+                editandoId = null;
             }
         });
     }
