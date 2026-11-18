@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minhas Demandas e Agenda — HelpTI</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    body { padding-bottom: 70px !important; background-color: #17212B !important; color: #FFFFFF !important; font-family: sans-serif; margin: 0; }
+    
+    .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #17212B; border-top: 1px solid #263340; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
+    .bottom-nav .nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8695A7; font-size: 11px; position: relative; }
+    .bottom-nav .nav-item.active { color: #4FD1C5; }
+    .bottom-nav .nav-item i { font-size: 18px; margin-bottom: 4px; }
+    
+    .badge-notificacao { position: absolute; top: -4px; right: 22px; background-color: #FF4757; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #17212B; display: none; }
+
+    .chamado-card { background: var(--surface, #1C2733); border: 1px solid var(--border, #263340); border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .ticket-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
+    .status-em_andamento, .status-em_negociacao { background: rgba(246, 173, 85, 0.2); color: #F6AD55; }
+    .status-resolvido { background: rgba(104, 211, 145, 0.2); color: #68D391; }
+    
+    .btn-acao { padding: 8px 15px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: bold; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; }
+    .btn-chat { background: #4FD1C5; color: #17212B; }
+    .btn-adiar { background: #F6AD55; color: #17212B; }
+    .btn-concluir { background: #68D391; color: #17212B; }
+    .btn-acao:hover { opacity: 0.9; }
+
+    .agenda-header { background: var(--surface-alt, #263340); color: white; padding: 20px; border-radius: 8px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border, #263340); }
+
+    /* Estilo das estrelas de avaliação */
+    .rating-stars { display: flex; gap: 8px; font-size: 1.8rem; cursor: pointer; justify-content: center; margin: 15px 0; }
+    .rating-stars i { color: #4A5568; transition: 0.2s; }
+    .rating-stars i.selected { color: #FFD700; }
+</style>
+</head>
+<body>
+
+<div class="topbar" style="background: var(--surface, #1C2733); padding: 15px 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border, #263340);">
+  <div class="logo" style="font-weight: bold; color: #4FD1C5; font-size: 1.5rem;"><span class="dot"></span> HelpTI Técnico</div>
+  <div class="user-info">
+    <span id="nome-usuario" style="font-weight: bold; color: #4FD1C5;">Carregando...</span>
+  </div>
+</div>
+
+<div class="container" style="padding: 20px; max-width: 800px; margin: 20px auto 0;">
+  
+  <!-- Painel Resumo da Agenda -->
+  <div class="agenda-header">
+      <div>
+          <h2 style="margin: 0; font-size: 1.3rem; color: #FFFFFF;"><i class="fas fa-calendar-alt"></i> Minha Agenda de Entregas</h2>
+          <p style="margin: 5px 0 0 0; color: #8695A7; font-size: 0.9rem;">Acompanhe seus prazos e atendimentos em andamento.</p>
+      </div>
+      <div id="contador-pendentes" style="background: #17212B; padding: 10px 15px; border-radius: 8px; text-align: center; font-size: 0.85rem; border: 1px solid #263340;">
+          <span id="num-pendentes" style="font-size: 1.2rem; font-weight: bold; color: #F6AD55;">0</span><br><span style="color: #8695A7;">Ativos</span>
+      </div>
+  </div>
+
+  <h3 style="margin-bottom: 15px; color: #FFFFFF;">Cronograma de Chamados</h3>
+  
+  <div id="lista-minhas-demandas">
+    <p style="color: #8695A7; text-align: center; padding: 30px;">Carregando agenda...</p>
+  </div>
+</div>
+
+<!-- MODAL PARA ALTERAR / ADIAR O PRAZO -->
+<div id="modal-novo-prazo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center;">
+    <div style="background: var(--surface, #1C2733); padding: 25px; border-radius: 8px; border: 1px solid var(--border, #263340); width: 320px; color: white; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+        <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: #F6AD55;"><i class="fas fa-calendar-alt"></i> Alterar Previsão de Entrega</h3>
+        <label style="font-size: 0.85rem; color: #8695A7; display: block; margin-bottom: 8px;">Selecione a nova data limite:</label>
+        <input type="date" id="input-nova-data-prazo" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-alt, #263340); color: white; margin-bottom: 20px; box-sizing: border-box; font-size: 1rem;">
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button type="button" id="btn-cancelar-novo-prazo" style="padding: 8px 14px; background: #263340; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: #8695A7; font-weight: bold;">Cancelar</button>
+            <button type="button" id="btn-salvar-novo-prazo" style="padding: 8px 14px; background: #F6AD55; border: none; border-radius: 6px; cursor: pointer; color: #17212B; font-weight: bold;">Atualizar Prazo</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE AVALIAÇÃO DO CLIENTE -->
+<div id="modal-avaliar-cliente" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center;">
+    <div style="background: var(--surface, #1C2733); padding: 25px; border-radius: 8px; border: 1px solid var(--border, #263340); width: 340px; color: white; box-shadow: 0 4px 20px rgba(0,0,0,0.5); text-align: center;">
+        <h3 style="margin-top: 0; margin-bottom: 5px; font-size: 1.2rem; color: #68D391;"><i class="fas fa-star"></i> Avaliar Cliente</h3>
+        <p style="font-size: 0.85rem; color: #8695A7; margin-bottom: 15px;">Como foi atender este cliente? Dê uma nota de 1 a 5 estrelas:</p>
+        
+        <div class="rating-stars" id="estrelas-container">
+            <i class="fas fa-star" data-value="1"></i>
+            <i class="fas fa-star" data-value="2"></i>
+            <i class="fas fa-star" data-value="3"></i>
+            <i class="fas fa-star" data-value="4"></i>
+            <i class="fas fa-star" data-value="5"></i>
+        </div>
+        
+        <div style="display: flex; justify-content: space-between; gap: 10px; margin-top: 20px;">
+            <button type="button" id="btn-cancelar-avaliacao" style="flex: 1; padding: 10px; background: #263340; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: #8695A7; font-weight: bold;">Cancelar</button>
+            <button type="button" id="btn-salvar-avaliacao" style="flex: 1; padding: 10px; background: #68D391; border: none; border-radius: 6px; cursor: pointer; color: #17212B; font-weight: bold;">Concluir Chamado</button>
+        </div>
+    </div>
+</div>
+
+<nav class="bottom-nav">
+    <a href="feed.html" class="nav-item"><i class="fas fa-home"></i><span>Início</span></a>
+    <a href="minhas-demandas.html" class="nav-item active"><i class="fas fa-tools"></i><span>Atendimentos</span></a>
+    <a href="chat.html" class="nav-item">
+        <span class="badge-notificacao" id="badge-chat"></span>
+        <i class="fas fa-comments"></i>
+        <span>Chat</span>
+    </a>
+    <a href="perfil.html" class="nav-item"><i class="fas fa-user"></i><span>Perfil</span></a>
+</nav>
+
+<script type="module">
+    import { exigirLogin } from "./js/auth.js";
+    import { escutarDemandas, LABEL_STATUS, LABEL_CATEGORIA } from "./js/demandas.js";
+    import { db } from "./js/firebase-config.js";
+    import { doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    let meuId = null;
+    let demandaParaAdiarId = null;
+    let demandaParaConcluirId = null;
+    let notaSelecionada = 5; // Nota padrão 5 estrelas
+
+    exigirLogin((user, perfil) => {
+        if (!user || perfil.tipo !== "tecnico") {
+            alert("Acesso restrito a técnicos.");
+            window.location.href = "feed.html";
+            return;
+        }
+        meuId = user.uid;
+        document.getElementById("nome-usuario").textContent = perfil.nome;
+
+        escutarDemandas((chamados) => {
+            renderizarAgenda(chamados);
+            
+            let temNotificacao = false;
+            chamados.forEach(c => {
+                if ((c.clienteId === meuId || c.tecnicoId === meuId) && c.status !== "aberto") {
+                    if (c.ultimaMensagemDe && c.ultimaMensagemDe !== meuId && c.lida === false) {
+                        temNotificacao = true;
+                    }
+                }
+            });
+            const badgeChat = document.getElementById("badge-chat");
+            if(badgeChat) badgeChat.style.display = temNotificacao ? "block" : "none";
+        });
+    });
+
+    function renderizarAgenda(todosChamados) {
+        const listaDiv = document.getElementById("lista-minhas-demandas");
+        listaDiv.innerHTML = "";
+
+        const minhasDemandas = todosChamados.filter(c => c.tecnicoId === meuId);
+        const ativos = minhasDemandas.filter(c => c.status !== "resolvido").length;
+        document.getElementById("num-pendentes").textContent = ativos;
+
+        if (minhasDemandas.length === 0) {
+            listaDiv.innerHTML = "<p style='color: #8695A7; text-align: center; padding: 30px;'>Você ainda não assumiu nenhum chamado.</p>";
+            return;
+        }
+
+        minhasDemandas.sort((a, b) => {
+            if (a.status === "resolvido" && b.status !== "resolvido") return 1;
+            if (a.status !== "resolvido" && b.status === "resolvido") return -1;
+            return 0;
+        });
+
+        minhasDemandas.forEach(chamado => {
+            const div = document.createElement("div");
+            div.className = "chamado-card";
+
+            let infoPrazo = chamado.prazoEstimado 
+                ? `<div style="font-size: 0.9rem; color: #F6AD55; margin: 10px 0; background: rgba(246, 173, 85, 0.1); border: 1px solid rgba(246, 173, 85, 0.3); padding: 8px 12px; border-radius: 6px; display: inline-block;"><i class="fas fa-calendar-check"></i> Previsão de Entrega: <strong>${chamado.prazoEstimado}</strong></div>` 
+                : "";
+
+            // Exibe a avaliação do cliente se já foi concluído
+            let infoAvaliacaoCliente = chamado.avaliacaoCliente 
+                ? `<div style="font-size: 0.85rem; color: #68D391; margin-top: 8px;"><i class="fas fa-star"></i> Sua avaliação para o cliente: <strong>${chamado.avaliacaoCliente} / 5</strong></div>` 
+                : "";
+
+            let botoesAcao = `<a href="chat.html?id=${chamado.id}" class="btn-acao btn-chat"><i class="fas fa-comments"></i> Chat</a>`;
+
+            if (chamado.status !== "resolvido") {
+                botoesAcao = `
+                    <button class="btn-acao btn-adiar" data-id="${chamado.id}" title="Alterar prazo"><i class="fas fa-calendar-alt"></i> Alterar Prazo</button>
+                    <button class="btn-acao btn-concluir" data-id="${chamado.id}"><i class="fas fa-check-circle"></i> Concluir</button>
+                ` + botoesAcao;
+            }
+
+            const statusLabel = LABEL_STATUS[chamado.status] || chamado.status;
+            const catLabel = LABEL_CATEGORIA[chamado.categoria] || chamado.categoria;
+
+            div.innerHTML = `
+                <div class="ticket-header">
+                    <span style="font-weight: bold; color: #8695A7; font-size: 0.9rem;">#${chamado.ticketId || '0000'} • Cliente: ${chamado.clienteNome || 'Desconhecido'}</span>
+                    <span class="badge status-${chamado.status}">${statusLabel}</span>
+                </div>
+                <h3 style="margin: 5px 0 8px 0; color: #FFFFFF;">${chamado.titulo || 'Sem título'}</h3>
+                <p style="color: #A0AAB5; font-size: 0.9rem; margin-bottom: 10px;">${chamado.descricao || ''}</p>
+                ${infoPrazo}
+                ${infoAvaliacaoCliente}
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border, #263340); padding-top: 12px; margin-top: 10px;">
+                    <span style="font-size: 0.85rem; color: #8695A7;"><i class="fas fa-tag"></i> ${catLabel}</span>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">${botoesAcao}</div>
+                </div>
+            `;
+            listaDiv.appendChild(div);
+        });
+
+        // Abrir modal de adiar prazo
+        document.querySelectorAll(".btn-adiar").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                demandaParaAdiarId = e.currentTarget.getAttribute("data-id");
+                const hoje = new Date().toISOString().split('T')[0];
+                const inputData = document.getElementById("input-nova-data-prazo");
+                inputData.min = hoje;
+                inputData.value = hoje;
+                document.getElementById("modal-novo-prazo").style.display = "flex";
+            });
+        });
+
+        // Abrir modal de avaliação do cliente ao clicar em Concluir
+        document.querySelectorAll(".btn-concluir").forEach(btn => {
+            btn.addEventListener("click", (e) => {
+                demandaParaConcluirId = e.currentTarget.getAttribute("data-id");
+                notaSelecionada = 5; // reseta para 5 estrelas
+                atualizarEstrelasVisuais(5);
+                document.getElementById("modal-avaliar-cliente").style.display = "flex";
+            });
+        });
+    }
+
+    // Controle interativo das estrelas
+    const estrelas = document.querySelectorAll("#estrelas-container i");
+    estrelas.forEach(star => {
+        star.addEventListener("click", (e) => {
+            notaSelecionada = parseInt(e.target.getAttribute("data-value"));
+            atualizarEstrelasVisuais(notaSelecionada);
+        });
+    });
+
+    function atualizarEstrelasVisuais(nota) {
+        estrelas.forEach(star => {
+            const val = parseInt(star.getAttribute("data-value"));
+            if (val <= nota) {
+                star.classList.add("selected");
+            } else {
+                star.classList.remove("selected");
+            }
+        });
+    }
+
+    // Fechar modal de alterar prazo
+    document.getElementById("btn-cancelar-novo-prazo").addEventListener("click", () => {
+        document.getElementById("modal-novo-prazo").style.display = "none";
+        demandaParaAdiarId = null;
+    });
+
+    document.getElementById("btn-salvar-novo-prazo").addEventListener("click", async () => {
+        const dataValor = document.getElementById("input-nova-data-prazo").value;
+        if (!dataValor) {
+            alert("Por favor, selecione uma data válida.");
+            return;
+        }
+
+        const partes = dataValor.split("-");
+        const dataFormatada = `${partes[2]}/${partes[1]}/${partes[0]}`;
+
+        try {
+            const docRef = doc(db, "demandas", demandaParaAdiarId);
+            await updateDoc(docRef, { prazoEstimado: dataFormatada });
+            document.getElementById("modal-novo-prazo").style.display = "none";
+            demandaParaAdiarId = null;
+            alert("Previsão de entrega atualizada com sucesso!");
+        } catch (err) {
+            alert("Erro ao atualizar prazo: " + err.message);
+        }
+    });
+
+    // Fechar modal de avaliação
+    document.getElementById("btn-cancelar-avaliacao").addEventListener("click", () => {
+        document.getElementById("modal-avaliar-cliente").style.display = "none";
+        demandaParaConcluirId = null;
+    });
+
+    // Salvar avaliação do cliente e concluir chamado
+    document.getElementById("btn-salvar-avaliacao").addEventListener("click", async () => {
+        try {
+            const docRef = doc(db, "demandas", demandaParaConcluirId);
+            await updateDoc(docRef, { 
+                status: "resolvido",
+                avaliacaoCliente: notaSelecionada 
+            });
+            
+            document.getElementById("modal-avaliar-cliente").style.display = "none";
+            demandaParaConcluirId = null;
+            alert("Chamado concluído e cliente avaliado com sucesso!");
+        } catch (err) {
+            alert("Erro ao concluir chamado: " + err.message);
+        }
+    });
+</script>
+</body>
+</html>

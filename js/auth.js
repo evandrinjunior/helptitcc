@@ -1,78 +1,51 @@
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-// CORREÇÃO AQUI: Importando as funções do banco de dados para o auth.js
-import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { auth, db } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// 1. Função de Cadastro Normal
-export async function cadastrarUsuario(nome, email, senha, tipo) {
-    const credencial = await createUserWithEmailAndPassword(auth, email, senha);
-    const user = credencial.user;
-    
-    // Salva o perfil no Firestore
-    await setDoc(doc(db, "usuarios", user.uid), {
-        nome: nome,
-        email: email,
-        tipo: tipo,
-        criadoEm: new Date()
-    });
-    
-    window.location.href = "feed.html";
-}
-
-// 2. Função de Login Normal
-export async function logarUsuario(email, senha) {
-    await signInWithEmailAndPassword(auth, email, senha);
-    window.location.href = "feed.html";
-}
-
-// 3. Função do Google
-export async function loginComGoogle() {
-    const provider = new GoogleAuthProvider();
-    const cred = await signInWithPopup(auth, provider);
-    const user = cred.user;
-
-    const docRef = doc(db, "usuarios", user.uid);
-    const docSnap = await getDoc(docRef);
-
-    // Se for o primeiro acesso, cria o perfil como cliente
-    if (!docSnap.exists()) {
-        await setDoc(docRef, {
-            nome: user.displayName,
-            email: user.email,
-            tipo: "cliente",
-            criadoEm: new Date()
-        });
-    }
-    
-    window.location.href = "feed.html";
-}
-
-// 4. Função que protege as páginas (Feed, Chat, Perfil)
+// Verifica se o usuário está logado e busca o perfil no Firestore com segurança contra travamentos
 export function exigirLogin(callback) {
     onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            const docSnap = await getDoc(doc(db, "usuarios", user.uid));
-            if (docSnap.exists()) {
-                const perfil = docSnap.data();
-                
-                // Atualiza o nome na barra superior
-                const nomeEl = document.getElementById("nome-usuario");
-                if(nomeEl) nomeEl.textContent = perfil.nome;
-                
-                // Atualiza a etiqueta (badge) de tipo na barra superior
-                const badgeEl = document.getElementById("badge-tipo");
-                if(badgeEl) badgeEl.textContent = perfil.tipo;
-
-                callback(user, perfil);
-            }
-        } else {
-            window.location.href = "login.html";
+        if (!user) {
+            window.location.href = "index.html";
+            return;
         }
+
+        // Perfil padrão caso o Firestore falhe ou demore
+        let perfil = { 
+            tipo: "cliente", 
+            nome: user.displayName || user.email.split('@')[0] 
+        };
+
+        try {
+            // Cria uma promessa com timeout de 3 segundos para o Firestore
+            const docRef = doc(db, "usuarios", user.uid);
+            const fetchPromise = getDoc(docRef);
+            
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(DesejaTempoEsgotado => {}), 3000)
+            );
+
+            const docSnap = await Promise.race([fetchPromise, timeoutPromise]);
+            
+            if (docSnap && docSnap.exists()) {
+                const dados = docSnap.data();
+                perfil.nome = dados.nome || perfil.nome;
+                perfil.tipo = dados.tipo || "cliente";
+            }
+        } catch (error) {
+            console.warn("Aviso: Não foi possível carregar do Firestore, usando dados básicos.", error);
+        }
+
+        // Garante que o callback sempre será executado, evitando o travamento
+        callback(user, perfil);
     });
 }
 
-// 5. Função de Sair
-export async function deslogar() {
-    await signOut(auth);
-    window.location.href = "login.html";
+// Função para encerrar a sessão do usuário
+export async function fazerLogout() {
+    try {
+        await signOut(auth);
+    } catch (error) {
+        throw new Error("Erro ao encerrar sessão: " + error.message);
+    }
 }
