@@ -7,21 +7,24 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
-    body { padding-bottom: 70px !important; background-color: #17212B !important; color: #FFFFFF !important; font-family: sans-serif; margin: 0; }
+    body { padding-bottom: 80px !important; background-color: #17212B !important; color: #FFFFFF !important; font-family: sans-serif; margin: 0; }
     
-    .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #17212B; border-top: 1px solid #263340; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
-    .bottom-nav .nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8695A7; font-size: 11px; position: relative; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #17212B; border-top: 1px solid #263340; display: flex; justify-content: space-around; padding: 10px 0; z-index: 9999; }
+    .bottom-nav .nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8695A7; font-size: 11px; position: relative; cursor: pointer; }
     .bottom-nav .nav-item.active { color: #4FD1C5; }
     .bottom-nav .nav-item i { font-size: 18px; margin-bottom: 4px; }
     
     .badge-notificacao { position: absolute; top: -4px; right: 22px; background-color: #FF4757; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #17212B; display: none; }
 
-    .perfil-card { background: var(--surface, #1C2733); border: 1px solid var(--border, #263340); border-radius: 8px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-align: center; }
-    .perfil-avatar { width: 80px; height: 80px; background: rgba(79, 209, 197, 0.1); border: 2px solid var(--accent, #4FD1C5); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; color: #4FD1C5; margin: 0 auto 15px auto; }
+    .perfil-card { background: #1C2733; border: 1px solid #263340; border-radius: 8px; padding: 25px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-align: center; }
+    .perfil-avatar { width: 80px; height: 80px; background: rgba(79, 209, 197, 0.1); border: 2px solid #4FD1C5; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; color: #4FD1C5; margin: 0 auto 15px auto; }
     
-    .info-group { background: var(--surface-alt, #263340); padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border, #263340); font-size: 0.95rem; }
+    .info-group { background: #263340; padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #324252; font-size: 0.95rem; gap: 10px; flex-wrap: wrap; }
     .info-label { color: #8695A7; font-weight: bold; }
     .info-value { color: #FFFFFF; }
+
+    .btn-geo { background: #4FD1C5; color: #17212B; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-geo:hover { opacity: 0.9; }
 
     .btn-sair { background: #FF4757; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1rem; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
     .btn-sair:hover { opacity: 0.9; }
@@ -29,7 +32,7 @@
 </head>
 <body>
 
-<div class="topbar" style="background: var(--surface, #1C2733); padding: 15px 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border, #263340);">
+<div class="topbar" style="background: #1C2733; padding: 15px 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #263340;">
   <div class="logo" style="font-weight: bold; color: #4FD1C5; font-size: 1.5rem;"><span class="dot"></span> HelpTI Perfil</div>
   <div class="user-info">
     <span id="topbar-nome" style="font-weight: bold; color: #4FD1C5;">Carregando...</span>
@@ -46,7 +49,7 @@
       <p id="perfil-tipo" style="margin: 0; color: #8695A7; text-transform: capitalize; font-size: 0.9rem;">—</p>
   </div>
 
-  <div style="background: var(--surface, #1C2733); border: 1px solid var(--border, #263340); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+  <div style="background: #1C2733; border: 1px solid #263340; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
       <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: #4FD1C5;"><i class="fas fa-id-card"></i> Detalhes da Conta</h3>
       
       <div class="info-group">
@@ -62,6 +65,16 @@
       <div class="info-group" id="bloco-total-atendimentos" style="display: none;">
           <span class="info-label"><i class="fas fa-check-circle"></i> Atendimentos / Chamados</span>
           <span class="info-value" id="perfil-total-atendimentos">0</span>
+      </div>
+
+      <div class="info-group">
+          <div>
+              <span class="info-label"><i class="fas fa-map-marker-alt" style="color: #4FD1C5;"></i> Localização Base</span><br>
+              <small id="status-localizacao" style="color: #8695A7;">Não configurada</small>
+          </div>
+          <button type="button" id="btn-atualizar-geo" class="btn-geo">
+              <i class="fas fa-crosshairs"></i> Atualizar GPS
+          </button>
       </div>
   </div>
 
@@ -84,32 +97,48 @@
 
 <script type="module">
     import { exigirLogin, fazerLogout } from "./js/auth.js";
-    import { escutarDemandas } from "./js/demandas.js";
+    import { escutarDemandas, obterCidadePorCoordenadas } from "./js/demandas.js";
+    import { db } from "./js/firebase-config.js";
+    import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     let meuId = null;
 
-    exigirLogin((user, perfil) => {
+    exigirLogin(async (user, perfil) => {
         meuId = user.uid;
 
-        // Preenche dados básicos
         document.getElementById("topbar-nome").textContent = perfil.nome;
         document.getElementById("perfil-nome").textContent = perfil.nome;
         document.getElementById("perfil-email").textContent = user.email;
         document.getElementById("perfil-tipo").textContent = perfil.tipo === "tecnico" ? "Técnico Especialista" : "Cliente / Usuário";
+
+        const statusGeoEl = document.getElementById("status-localizacao");
+        if (perfil.cidade) {
+            statusGeoEl.textContent = `Ativa • ${perfil.cidade}`;
+            statusGeoEl.style.color = "#68D391";
+        } else if (perfil.latitude && perfil.longitude) {
+            statusGeoEl.textContent = "Identificando cidade...";
+            const cidadeDetectada = await obterCidadePorCoordenadas(perfil.latitude, perfil.longitude);
+            if (cidadeDetectada) {
+                statusGeoEl.textContent = `Ativa • ${cidadeDetectada}`;
+                statusGeoEl.style.color = "#68D391";
+                await setDoc(doc(db, "usuarios", meuId), { cidade: cidadeDetectada }, { merge: true });
+            } else {
+                statusGeoEl.textContent = `Ativa (${Number(perfil.latitude).toFixed(4)}, ${Number(perfil.longitude).toFixed(4)})`;
+                statusGeoEl.style.color = "#68D391";
+            }
+        }
 
         if (perfil.tipo === "tecnico") {
             const navDemandas = document.getElementById("nav-demandas");
             if(navDemandas) navDemandas.style.display = "flex";
         }
 
-        // Escuta as demandas para calcular a reputação média (seja cliente ou técnico)
         escutarDemandas((chamados) => {
             let somaNotas = 0;
             let totalAvaliacoes = 0;
             let countAtendimentos = 0;
 
             if (perfil.tipo === "cliente") {
-                // Para cliente: calcula média das avaliações que recebeu dos técnicos (campo avaliacaoCliente)
                 chamados.forEach(c => {
                     if (c.clienteId === meuId) {
                         countAtendimentos++;
@@ -120,7 +149,6 @@
                     }
                 });
             } else {
-                // Para técnico: calcula média das avaliações que recebeu dos clientes (campo avaliacao)
                 chamados.forEach(c => {
                     if (c.tecnicoId === meuId) {
                         countAtendimentos++;
@@ -132,12 +160,10 @@
                 });
             }
 
-            // Exibe total de chamados do usuário
             const blocoTotal = document.getElementById("bloco-total-atendimentos");
             if(blocoTotal) blocoTotal.style.display = "flex";
             document.getElementById("perfil-total-atendimentos").textContent = countAtendimentos;
 
-            // Exibe a média de estrelas
             const spanMedia = document.getElementById("perfil-media");
             if (totalAvaliacoes > 0) {
                 const media = (somaNotas / totalAvaliacoes).toFixed(1);
@@ -146,7 +172,6 @@
                 spanMedia.innerHTML = `<span style="color: #8695A7; font-weight: normal;">Sem avaliações ainda (Novo)</span>`;
             }
 
-            // Notificações no chat
             let temNotificacao = false;
             chamados.forEach(c => {
                 if ((c.clienteId === meuId || c.tecnicoId === meuId) && c.status !== "aberto") {
@@ -158,6 +183,48 @@
             const badgeChat = document.getElementById("badge-chat");
             if(badgeChat) badgeChat.style.display = temNotificacao ? "block" : "none";
         });
+    });
+
+    document.getElementById("btn-atualizar-geo").addEventListener("click", () => {
+        const btn = document.getElementById("btn-atualizar-geo");
+        if (!navigator.geolocation) {
+            alert("Seu navegador não suporta geolocalização.");
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Buscando...`;
+
+        navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+                const lat = pos.coords.latitude;
+                const lon = pos.coords.longitude;
+                try {
+                    const cidadeNome = await obterCidadePorCoordenadas(lat, lon);
+                    await setDoc(doc(db, "usuarios", meuId), {
+                        latitude: lat,
+                        longitude: lon,
+                        cidade: cidadeNome || null
+                    }, { merge: true });
+
+                    const textoExibicao = cidadeNome ? `Ativa • ${cidadeNome}` : `Ativa (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+                    document.getElementById("status-localizacao").textContent = textoExibicao;
+                    document.getElementById("status-localizacao").style.color = "#68D391";
+                    alert(`Localização atualizada${cidadeNome ? ` para ${cidadeNome}` : ""}!`);
+                } catch (err) {
+                    alert("Erro ao salvar localização: " + err.message);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fas fa-crosshairs"></i> Atualizar GPS`;
+                }
+            },
+            (err) => {
+                alert("Permissão de localização negada ou indisponível: " + err.message);
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-crosshairs"></i> Atualizar GPS`;
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
     });
 
     document.getElementById("btn-logout").addEventListener("click", async () => {

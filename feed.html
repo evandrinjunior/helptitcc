@@ -7,15 +7,17 @@
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
-    body { padding-bottom: 70px !important; }
-    .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #17212B; border-top: 1px solid #263340; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; }
-    .bottom-nav .nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8695A7; font-size: 11px; position: relative; }
+    body { padding-bottom: 80px !important; background-color: #17212B !important; color: #FFFFFF !important; font-family: sans-serif; margin: 0; }
+    .topbar { background: #1C2733; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #263340; position: sticky; top: 0; z-index: 900; }
+    .topbar .logo { font-weight: bold; color: #4FD1C5; font-size: 1.4rem; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #17212B; border-top: 1px solid #263340; display: flex; justify-content: space-around; padding: 10px 0; z-index: 9999; }
+    .bottom-nav .nav-item { display: flex; flex-direction: column; align-items: center; text-decoration: none; color: #8695A7; font-size: 11px; position: relative; cursor: pointer; }
     .bottom-nav .nav-item.active { color: #4FD1C5; }
     .bottom-nav .nav-item i { font-size: 18px; margin-bottom: 4px; }
     
     .badge-notificacao { position: absolute; top: -4px; right: 22px; background-color: #FF4757; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #17212B; display: none; }
     
-    .chamado-card { background: var(--surface, #1C2733); border: 1px solid var(--border, #263340); border-radius: 8px; padding: 15px; margin-bottom: 15px; }
+    .chamado-card { background: #1C2733; border: 1px solid #263340; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
     .ticket-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
     .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
     .status-aberto { background: rgba(79, 209, 197, 0.2); color: #4FD1C5; }
@@ -23,46 +25,66 @@
     .status-resolvido { background: rgba(104, 211, 145, 0.2); color: #68D391; }
     
     .btn-acao { padding: 8px 15px; border-radius: 6px; text-decoration: none; font-size: 0.85rem; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
-    .btn-chat { background: var(--accent, #4FD1C5); color: #17212B; }
+    .btn-chat { background: #4FD1C5; color: #17212B; }
     .btn-assumir { background: #F6AD55; color: #17212B; }
     .btn-acao:hover { opacity: 0.9; }
 
     .filtros-container { display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px; }
-    .btn-filtro { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: #8695A7; cursor: pointer; font-size: 0.85rem; font-weight: bold; transition: 0.2s; white-space: nowrap; }
-    .btn-filtro.active { background: var(--accent); color: #17212B; border-color: var(--accent); }
+    .btn-filtro { padding: 6px 14px; border-radius: 20px; border: 1px solid #263340; background: #1C2733; color: #8695A7; cursor: pointer; font-size: 0.85rem; font-weight: bold; transition: 0.2s; white-space: nowrap; }
+    .btn-filtro.active { background: #4FD1C5; color: #17212B; border-color: #4FD1C5; }
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <div class="logo"><span class="dot"></span> HelpTI</div>
-  <div class="user-info">
-    <span id="nome-usuario" style="font-weight: bold; color: var(--accent);">Carregando...</span>
-    <span class="badge-tipo" id="badge-tipo" style="margin-left: 6px; font-size: 0.8rem; background: var(--surface-alt); padding: 2px 8px; border-radius: 4px; border: 1px solid var(--border); text-transform: capitalize;">—</span>
+  <div class="user-info" style="display: flex; align-items: center; gap: 6px;">
+    <span id="nome-usuario" style="font-weight: bold; color: #4FD1C5;">Carregando...</span>
+    <span id="badge-tipo" style="font-size: 0.8rem; background: #263340; color: #FFFFFF; padding: 2px 8px; border-radius: 4px; border: 1px solid #324252; text-transform: capitalize;">—</span>
   </div>
 </div>
 
-<div class="feed-container" style="padding: 20px; max-width: 800px; margin: 60px auto 0;">
+<div class="feed-container" style="padding: 20px; max-width: 800px; margin: 10px auto 0;">
   
-  <div id="painel-criar-chamado" style="display: none; background: var(--surface-alt, #263340); padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid var(--border);">
-    <h3 style="margin-top:0;">Abrir novo chamado</h3>
+  <div id="painel-criar-chamado" style="display: none; background: #263340; padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid #324252;">
+    <h3 style="margin-top:0; color: #FFFFFF;">Abrir novo chamado</h3>
     <form id="form-chamado" style="display: flex; flex-direction: column; gap: 12px; margin-top: 15px;">
-       <input type="text" id="titulo" placeholder="Resumo do problema (Ex: PC não liga)" required style="padding: 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: white;">
-       <textarea id="descricao" placeholder="Descreva os detalhes..." required rows="3" style="padding: 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: white; resize: vertical;"></textarea>
-       <select id="categoria" required style="padding: 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: white;">
-         <option value="hardware">Equipamento (Hardware)</option>
-         <option value="software">Sistema/Programas (Software)</option>
-       </select>
-       <button type="submit" class="btn-primario" style="padding: 12px; background: var(--accent); color: #17212B; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 1rem;">Publicar chamado</button>
+       <input type="text" id="titulo" placeholder="Resumo do problema (Ex: PC não liga)" required style="padding: 12px; border-radius: 6px; border: 1px solid #324252; background: #1C2733; color: white;">
+       <textarea id="descricao" placeholder="Descreva os detalhes..." required rows="3" style="padding: 12px; border-radius: 6px; border: 1px solid #324252; background: #1C2733; color: white; resize: vertical;"></textarea>
+       
+       <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+           <select id="categoria" required style="flex: 1; min-width: 180px; padding: 12px; border-radius: 6px; border: 1px solid #324252; background: #1C2733; color: white;">
+             <option value="hardware">Equipamento (Hardware)</option>
+             <option value="software">Sistema/Programas (Software)</option>
+           </select>
+
+           <select id="modalidade" required style="flex: 1; min-width: 180px; padding: 12px; border-radius: 6px; border: 1px solid #324252; background: #1C2733; color: white;">
+             <option value="remoto">Atendimento Remoto (Online)</option>
+             <option value="presencial">Atendimento Presencial</option>
+           </select>
+       </div>
+
+       <div id="bloco-geo-chamado" style="display: none; background: #1C2733; padding: 12px; border-radius: 6px; border: 1px solid #324252; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+           <div style="font-size: 0.85rem; color: #8695A7;">
+               <i class="fas fa-map-marker-alt" style="color: #4FD1C5;"></i> <span id="texto-geo-chamado">Localização não anexada (o endereço exato só é combinado no chat).</span>
+           </div>
+           <button type="button" id="btn-capturar-geo-chamado" style="padding: 8px 12px; background: #263340; color: #4FD1C5; border: 1px solid #4FD1C5; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: bold;">
+               <i class="fas fa-crosshairs"></i> Anexar minha localização
+           </button>
+       </div>
+
+       <button type="submit" class="btn-primario" style="padding: 12px; background: #4FD1C5; color: #17212B; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; font-size: 1rem;">Publicar chamado</button>
     </form>
   </div>
 
-  <h2 id="titulo-feed">Mural de Chamados Abertos</h2>
+  <h2 id="titulo-feed" style="color: #FFFFFF;">Mural de Chamados Abertos</h2>
   
   <div class="filtros-container" id="filtros-container">
       <button class="btn-filtro active" data-cat="todos">Todos</button>
       <button class="btn-filtro" data-cat="hardware"><i class="fas fa-desktop"></i> Hardware</button>
       <button class="btn-filtro" data-cat="software"><i class="fas fa-code"></i> Software</button>
+      <button class="btn-filtro" data-cat="presencial"><i class="fas fa-map-marker-alt"></i> Presencial</button>
+      <button class="btn-filtro" data-cat="remoto"><i class="fas fa-laptop"></i> Remoto</button>
   </div>
 
   <div id="lista-chamados">
@@ -71,14 +93,14 @@
 </div>
 
 <!-- MODAL DO CALENDÁRIO PARA ESCOLHER PRAZO -->
-<div id="modal-prazo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; justify-content: center; align-items: center;">
-    <div style="background: var(--surface, #1C2733); padding: 25px; border-radius: 8px; border: 1px solid var(--border, #263340); width: 320px; color: white; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+<div id="modal-prazo" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 10000; justify-content: center; align-items: center;">
+    <div style="background: #1C2733; padding: 25px; border-radius: 8px; border: 1px solid #263340; width: 320px; color: white; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
         <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: #4FD1C5;"><i class="fas fa-calendar-alt"></i> Previsão de Entrega</h3>
         <label style="font-size: 0.85rem; color: #8695A7; display: block; margin-bottom: 8px;">Selecione a data limite para este atendimento:</label>
-        <input type="date" id="input-data-prazo" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-alt, #263340); color: white; margin-bottom: 20px; box-sizing: border-box; font-size: 1rem;">
+        <input type="date" id="input-data-prazo" style="width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #263340; background: #263340; color: white; margin-bottom: 20px; box-sizing: border-box; font-size: 1rem;">
         <div style="display: flex; justify-content: flex-end; gap: 10px;">
-            <button type="button" id="btn-cancelar-prazo" style="padding: 8px 14px; background: #263340; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: #8695A7; font-weight: bold;">Cancelar</button>
-            <button type="button" id="btn-salvar-prazo" style="padding: 8px 14px; background: var(--accent, #4FD1C5); border: none; border-radius: 6px; cursor: pointer; color: #17212B; font-weight: bold;">Confirmar</button>
+            <button type="button" id="btn-cancelar-prazo" style="padding: 8px 14px; background: #263340; border: 1px solid #324252; border-radius: 6px; cursor: pointer; color: #8695A7; font-weight: bold;">Cancelar</button>
+            <button type="button" id="btn-salvar-prazo" style="padding: 8px 14px; background: #4FD1C5; border: none; border-radius: 6px; cursor: pointer; color: #17212B; font-weight: bold;">Confirmar</button>
         </div>
     </div>
 </div>
@@ -96,18 +118,22 @@
 
 <script type="module">
     import { exigirLogin } from "./js/auth.js";
-    import { escutarDemandas, criarDemanda, assumirDemanda, atualizarDemanda, excluirDemanda, LABEL_STATUS, LABEL_CATEGORIA } from "./js/demandas.js";
+    import { escutarDemandas, criarDemanda, assumirDemanda, atualizarDemanda, excluirDemanda, calcularDistanciaKm, obterCidadePorCoordenadas, LABEL_STATUS, LABEL_CATEGORIA, LABEL_MODALIDADE } from "./js/demandas.js";
 
     let meuPerfil = null;
     let meuId = null;
     let todosChamados = []; 
     let filtroAtual = "todos"; 
     let editandoId = null; 
-    let demandaParaAssumirId = null; // Guarda o ID do chamado sendo assumido no modal
+    let demandaParaAssumirId = null;
+    let coordChamado = null;
 
     exigirLogin((user, perfil) => {
         meuPerfil = perfil;
         meuId = user.uid;
+
+        document.getElementById("nome-usuario").textContent = perfil.nome;
+        document.getElementById("badge-tipo").textContent = perfil.tipo;
 
         if (perfil.tipo === "cliente") {
             document.getElementById("painel-criar-chamado").style.display = "block";
@@ -120,8 +146,8 @@
         document.querySelectorAll(".btn-filtro").forEach(btn => {
             btn.addEventListener("click", (e) => {
                 document.querySelectorAll(".btn-filtro").forEach(b => b.classList.remove("active"));
-                e.target.classList.add("active");
-                filtroAtual = e.target.getAttribute("data-cat");
+                e.currentTarget.classList.add("active");
+                filtroAtual = e.currentTarget.getAttribute("data-cat");
                 renderizarChamados();
             });
         });
@@ -142,6 +168,62 @@
         });
     });
 
+    const selectModalidade = document.getElementById("modalidade");
+    if (selectModalidade) {
+        selectModalidade.addEventListener("change", (e) => {
+            const blocoGeo = document.getElementById("bloco-geo-chamado");
+            if (e.target.value === "presencial") {
+                blocoGeo.style.display = "flex";
+                if (meuPerfil && meuPerfil.latitude && meuPerfil.longitude && !coordChamado) {
+                    coordChamado = {
+                        latitude: meuPerfil.latitude,
+                        longitude: meuPerfil.longitude,
+                        cidade: meuPerfil.cidade || null
+                    };
+                    const nomeCidade = meuPerfil.cidade ? ` (${meuPerfil.cidade})` : "";
+                    document.getElementById("texto-geo-chamado").textContent = `Localização do seu perfil anexada${nomeCidade}.`;
+                    document.getElementById("texto-geo-chamado").style.color = "#68D391";
+                }
+            } else {
+                blocoGeo.style.display = "none";
+            }
+        });
+    }
+
+    const btnGeoChamado = document.getElementById("btn-capturar-geo-chamado");
+    if (btnGeoChamado) {
+        btnGeoChamado.addEventListener("click", () => {
+            if (!navigator.geolocation) {
+                alert("Geolocalização não suportada neste navegador.");
+                return;
+            }
+            btnGeoChamado.disabled = true;
+            btnGeoChamado.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Buscando...`;
+
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lon = pos.coords.longitude;
+                    const cidadeNome = await obterCidadePorCoordenadas(lat, lon);
+                    coordChamado = { latitude: lat, longitude: lon, cidade: cidadeNome };
+
+                    document.getElementById("texto-geo-chamado").textContent = cidadeNome
+                        ? `Localização anexada: ${cidadeNome}`
+                        : "Localização capturada com sucesso!";
+                    document.getElementById("texto-geo-chamado").style.color = "#68D391";
+                    btnGeoChamado.disabled = false;
+                    btnGeoChamado.innerHTML = `<i class="fas fa-check"></i> Localização Anexada`;
+                },
+                (err) => {
+                    alert("Não foi possível obter sua localização: " + err.message);
+                    btnGeoChamado.disabled = false;
+                    btnGeoChamado.innerHTML = `<i class="fas fa-crosshairs"></i> Anexar minha localização`;
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        });
+    }
+
     function renderizarChamados() {
         const listaDiv = document.getElementById("lista-chamados");
         listaDiv.innerHTML = "";
@@ -153,8 +235,10 @@
             chamadosFiltrados = todosChamados.filter(c => c.status === "aberto" || c.tecnicoId === meuId);
         }
 
-        if (filtroAtual !== "todos") {
+        if (filtroAtual === "hardware" || filtroAtual === "software") {
             chamadosFiltrados = chamadosFiltrados.filter(c => c.categoria === filtroAtual);
+        } else if (filtroAtual === "presencial" || filtroAtual === "remoto") {
+            chamadosFiltrados = chamadosFiltrados.filter(c => (c.modalidade || "remoto") === filtroAtual);
         }
 
         if (chamadosFiltrados.length === 0) {
@@ -162,7 +246,6 @@
             return;
         }
 
-        // Ordenação: Abertos (1) e Em Andamento (2) no topo, Resolvidos (3) embaixo
         const ordemStatus = { "aberto": 1, "em_andamento": 2, "em_negociacao": 2, "resolvido": 3 };
         
         chamadosFiltrados.sort((a, b) => {
@@ -189,6 +272,23 @@
                 infoTecnico = ` • Técnico: ${chamado.tecnicoNome} <span style="color:#FFD700;">(⭐ ${mediaTxt})</span>`;
             }
 
+            let badgeLocal = "";
+            const modalidadeAtual = chamado.modalidade || "remoto";
+            if (modalidadeAtual === "presencial") {
+                const cidadeTexto = chamado.cidade ? chamado.cidade : "";
+                if (meuPerfil.tipo === "tecnico" && meuPerfil.latitude && meuPerfil.longitude && chamado.latitude && chamado.longitude) {
+                    const km = calcularDistanciaKm(meuPerfil.latitude, meuPerfil.longitude, chamado.latitude, chamado.longitude);
+                    if (km !== null) {
+                        const prefixo = cidadeTexto ? `${cidadeTexto} • ` : "";
+                        badgeLocal = `<span style="font-size: 0.78rem; background: rgba(79, 209, 197, 0.15); color: #4FD1C5; padding: 3px 8px; border-radius: 4px; margin-left: 8px;"><i class="fas fa-map-marker-alt"></i> ${prefixo}Aprox. ${km} km</span>`;
+                    }
+                } else if (cidadeTexto) {
+                    badgeLocal = `<span style="font-size: 0.78rem; background: rgba(79, 209, 197, 0.15); color: #4FD1C5; padding: 3px 8px; border-radius: 4px; margin-left: 8px;"><i class="fas fa-map-marker-alt"></i> ${cidadeTexto}</span>`;
+                } else if (chamado.latitude && chamado.longitude) {
+                    badgeLocal = `<span style="font-size: 0.78rem; background: rgba(79, 209, 197, 0.15); color: #4FD1C5; padding: 3px 8px; border-radius: 4px; margin-left: 8px;"><i class="fas fa-map-marker-alt"></i> Localização anexada</span>`;
+                }
+            }
+
             let infoPrazo = chamado.prazoEstimado 
                 ? `<div style="font-size: 0.85rem; color: #F6AD55; margin-top: 8px; margin-bottom: 8px;"><i class="fas fa-calendar-check"></i> Previsão de Entrega: <strong>${chamado.prazoEstimado}</strong></div>` 
                 : "";
@@ -213,29 +313,27 @@
                     <span style="font-weight: bold; color: #8695A7; font-size: 0.9rem;">#${chamado.ticketId}${infoTecnico}</span>
                     <span class="badge status-${chamado.status}">${LABEL_STATUS[chamado.status] || chamado.status}</span>
                 </div>
-                <h3 style="margin: 5px 0 10px 0; color: white; display: flex; align-items: center;">${chamado.titulo} ${tagEditado}</h3>
+                <h3 style="margin: 5px 0 10px 0; color: white; display: flex; align-items: center; flex-wrap: wrap;">${chamado.titulo} ${tagEditado} ${badgeLocal}</h3>
                 <p style="color: #A0AAB5; font-size: 0.9rem; margin-bottom: 10px;">${chamado.descricao}</p>
                 ${infoPrazo}
-                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border); padding-top: 15px;">
-                    <span style="font-size: 0.85rem; color: #8695A7;"><i class="fas fa-tag"></i> ${LABEL_CATEGORIA[chamado.categoria] || chamado.categoria}</span>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #263340; padding-top: 15px; flex-wrap: wrap; gap: 10px;">
+                    <span style="font-size: 0.85rem; color: #8695A7;">
+                        <i class="fas fa-tag"></i> ${LABEL_CATEGORIA[chamado.categoria] || chamado.categoria} • 
+                        <i class="fas fa-${modalidadeAtual === 'presencial' ? 'map-marker-alt' : 'laptop'}"></i> ${LABEL_MODALIDADE[modalidadeAtual] || modalidadeAtual}
+                    </span>
                     <div style="display: flex; gap: 8px;">${botoesAcao}</div>
                 </div>
             `;
             listaDiv.appendChild(div);
         });
 
-        // Abertura do Modal de Calendário ao clicar em Assumir
         document.querySelectorAll(".btn-assumir").forEach(btn => {
             btn.addEventListener("click", (e) => {
                 demandaParaAssumirId = e.currentTarget.getAttribute("data-id");
-                
-                // Define a data mínima do calendário como hoje
                 const hoje = new Date().toISOString().split('T')[0];
                 const inputData = document.getElementById("input-data-prazo");
                 inputData.min = hoje;
                 inputData.value = hoje;
-
-                // Mostra o modal
                 document.getElementById("modal-prazo").style.display = "flex";
             });
         });
@@ -262,7 +360,14 @@
                 document.getElementById("titulo").value = chamadoData.titulo;
                 document.getElementById("descricao").value = chamadoData.descricao;
                 document.getElementById("categoria").value = chamadoData.categoria;
+                document.getElementById("modalidade").value = chamadoData.modalidade || "remoto";
                 
+                if ((chamadoData.modalidade || "remoto") === "presencial") {
+                    document.getElementById("bloco-geo-chamado").style.display = "flex";
+                } else {
+                    document.getElementById("bloco-geo-chamado").style.display = "none";
+                }
+
                 editandoId = idDemanda;
                 
                 const btnSubmit = document.querySelector("#form-chamado button[type='submit']");
@@ -277,7 +382,6 @@
         });
     }
 
-    // Ações dos botões dentro do Modal de Prazo
     document.getElementById("btn-cancelar-prazo").addEventListener("click", () => {
         document.getElementById("modal-prazo").style.display = "none";
         demandaParaAssumirId = null;
@@ -290,7 +394,6 @@
             return;
         }
 
-        // Converte de AAAA-MM-DD para DD/MM/AAAA para ficar bonito na tela
         const partes = dataValor.split("-");
         const dataFormatada = `${partes[2]}/${partes[1]}/${partes[0]}`;
 
@@ -308,15 +411,23 @@
     if(formChamado) {
         formChamado.addEventListener("submit", async (e) => {
             e.preventDefault();
-            const btn = e.target.querySelector("button");
+            const btn = e.target.querySelector("button[type='submit']");
             btn.textContent = "Processando...";
             btn.disabled = true;
 
+            const modalidadeVal = document.getElementById("modalidade").value;
             const dados = {
                 titulo: document.getElementById("titulo").value,
                 descricao: document.getElementById("descricao").value,
-                categoria: document.getElementById("categoria").value
+                categoria: document.getElementById("categoria").value,
+                modalidade: modalidadeVal
             };
+
+            if (modalidadeVal === "presencial" && coordChamado) {
+                dados.latitude = coordChamado.latitude;
+                dados.longitude = coordChamado.longitude;
+                if (coordChamado.cidade) dados.cidade = coordChamado.cidade;
+            }
 
             try {
                 if (editandoId) {
@@ -330,11 +441,15 @@
                     await criarDemanda(dados);
                 }
                 e.target.reset();
+                coordChamado = null;
+                document.getElementById("bloco-geo-chamado").style.display = "none";
+                document.getElementById("texto-geo-chamado").textContent = "Localização não anexada (o endereço exato só é combinado no chat).";
+                document.getElementById("texto-geo-chamado").style.color = "#8695A7";
             } catch (error) {
                 alert("Erro ao salvar: " + error.message);
             } finally {
                 btn.textContent = "Publicar chamado";
-                btn.style.background = "var(--accent)";
+                btn.style.background = "#4FD1C5";
                 btn.style.color = "#17212B";
                 btn.disabled = false;
                 editandoId = null;
