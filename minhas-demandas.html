@@ -16,8 +16,41 @@
     
     .badge-notificacao { position: absolute; top: -4px; right: 22px; background-color: #FF4757; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #17212B; display: none; }
 
-    .chamado-card { background: var(--surface, #1C2733); border: 1px solid var(--border, #263340); border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-    .ticket-header { display: flex; justify-content: space-between; margin-bottom: 10px; }
+    /* Sininho de vencimentos na topbar */
+    .topbar-right { display: flex; align-items: center; gap: 14px; }
+    .sino-container { position: relative; }
+    .btn-sino-prazos { position: relative; background: #263340; border: 1px solid #324354; color: #FFFFFF; width: 38px; height: 38px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; transition: 0.2s; }
+    .btn-sino-prazos:hover { border-color: #4FD1C5; color: #4FD1C5; }
+    .sino-contador { position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 999px; background: #FF4757; color: #FFFFFF; font-size: 0.7rem; font-weight: bold; display: none; align-items: center; justify-content: center; box-sizing: border-box; }
+    .sino-contador.ativo { display: inline-flex; }
+
+    .dropdown-prazos { display: none; position: absolute; right: 0; top: 46px; width: 340px; max-width: 92vw; max-height: 400px; overflow-y: auto; background: #1C2733; border: 1px solid #324354; border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,0.5); z-index: 1500; padding: 14px; text-align: left; }
+    .dropdown-prazos.aberto { display: block; }
+    .dropdown-prazos-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; font-weight: bold; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #263340; }
+    .grupo-prazo { margin-bottom: 12px; }
+    .grupo-prazo:last-child { margin-bottom: 0; }
+    .grupo-prazo-titulo { font-size: 0.74rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+    .titulo-atrasada { color: #FF4757; }
+    .titulo-proxima { color: #F6AD55; }
+
+    .item-prazo { padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; cursor: pointer; transition: 0.15s; border: 1px solid transparent; }
+    .item-prazo.atrasada { background: rgba(255, 71, 87, 0.14); border-color: rgba(255, 71, 87, 0.45); }
+    .item-prazo.atrasada:hover { background: rgba(255, 71, 87, 0.22); }
+    .item-prazo.proxima { background: rgba(246, 173, 85, 0.14); border-color: rgba(246, 173, 85, 0.45); }
+    .item-prazo.proxima:hover { background: rgba(246, 173, 85, 0.22); }
+    .item-prazo-titulo { font-size: 0.85rem; font-weight: bold; color: #FFFFFF; }
+    .item-prazo-meta { font-size: 0.75rem; color: #A0AAB5; margin-top: 2px; }
+
+    .chamado-card { background: var(--surface, #1C2733); border: 1px solid var(--border, #263340); border-radius: 8px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); transition: 0.2s; }
+    .chamado-card.demanda-atrasada { background: rgba(255, 71, 87, 0.12); border: 1px solid rgba(255, 71, 87, 0.65); border-left: 4px solid #FF4757; }
+    .chamado-card.destaque-foco { outline: 2px solid #4FD1C5; }
+
+    .badge-atrasada { background: #FF4757; color: #FFFFFF; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; letter-spacing: 0.02em; }
+    .info-prazo-padrao { font-size: 0.9rem; color: #F6AD55; margin: 10px 0; background: rgba(246, 173, 85, 0.1); border: 1px solid rgba(246, 173, 85, 0.3); padding: 8px 12px; border-radius: 6px; display: inline-block; }
+    .info-prazo-atrasado { font-size: 0.9rem; color: #FF8A95; margin: 10px 0; background: rgba(255, 71, 87, 0.18); border: 1px solid rgba(255, 71, 87, 0.55); padding: 8px 12px; border-radius: 6px; display: inline-block; font-weight: bold; }
+
+    .ticket-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+    .header-badges { display: flex; align-items: center; gap: 8px; }
     .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
     .status-em_andamento, .status-em_negociacao { background: rgba(246, 173, 85, 0.2); color: #F6AD55; }
     .status-resolvido { background: rgba(104, 211, 145, 0.2); color: #68D391; }
@@ -40,8 +73,25 @@
 
 <div class="topbar" style="background: var(--surface, #1C2733); padding: 15px 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border, #263340);">
   <a href="feed.html" class="logo" style="font-weight: bold; color: #4FD1C5; font-size: 1.5rem; text-decoration: none;"><span class="dot"></span> HelpTI Técnico</a>
-  <div class="user-info">
-    <span id="nome-usuario" style="font-weight: bold; color: #4FD1C5;">Carregando...</span>
+  <div class="topbar-right">
+    <div class="sino-container">
+      <button type="button" id="btn-sino-prazos" class="btn-sino-prazos" aria-label="Alertas de demandas vencidas ou próximas de vencer" aria-expanded="false">
+        <i class="fas fa-bell"></i>
+        <span id="sino-contador" class="sino-contador">0</span>
+      </button>
+      <div id="dropdown-prazos" class="dropdown-prazos" role="region" aria-label="Demandas vencidas e próximas de vencer">
+        <div class="dropdown-prazos-header">
+          <span>Alertas de Prazo</span>
+          <span id="resumo-prazos" style="font-size: 0.75rem; color: #8695A7; font-weight: normal;">0 alertas</span>
+        </div>
+        <div id="conteudo-prazos">
+          <p style="color: #8695A7; font-size: 0.82rem; margin: 0;">Nenhuma demanda vencida ou próxima de vencer.</p>
+        </div>
+      </div>
+    </div>
+    <div class="user-info">
+      <span id="nome-usuario" style="font-weight: bold; color: #4FD1C5;">Carregando...</span>
+    </div>
   </div>
 </div>
 
@@ -121,6 +171,42 @@
     let demandaParaConcluirId = null;
     let notaSelecionada = 5; // Nota padrão 5 estrelas
 
+    // Converte "DD/MM/AAAA" (ou "AAAA-MM-DD") para o início do dia local (00:00:00)
+    function parseDataPrazo(valorPrazo) {
+        if (!valorPrazo) return null;
+
+        if (typeof valorPrazo === "string" && valorPrazo.includes("/")) {
+            const partes = valorPrazo.split("/");
+            if (partes.length === 3) {
+                const dia = parseInt(partes[0], 10);
+                const mes = parseInt(partes[1], 10) - 1;
+                const ano = parseInt(partes[2], 10);
+                const data = new Date(ano, mes, dia);
+                return Number.isNaN(data.getTime()) ? null : data;
+            }
+        }
+
+        const dataPadrao = new Date(valorPrazo);
+        if (Number.isNaN(dataPadrao.getTime())) return null;
+        return new Date(dataPadrao.getFullYear(), dataPadrao.getMonth(), dataPadrao.getDate());
+    }
+
+    // Retorna "atrasada", "proxima" (vence hoje ou nos próximos 2 dias) ou "normal"
+    function obterSituacaoPrazo(chamado) {
+        if (chamado.status === "resolvido" || !chamado.prazoEstimado) return "normal";
+
+        const dataPrazo = parseDataPrazo(chamado.prazoEstimado);
+        if (!dataPrazo) return "normal";
+
+        const agora = new Date();
+        const hoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+        const diffDias = Math.round((dataPrazo - hoje) / (1000 * 60 * 60 * 24));
+
+        if (diffDias < 0) return "atrasada";
+        if (diffDias <= 2) return "proxima";
+        return "normal";
+    }
+
     exigirLogin((user, perfil) => {
         if (!user || perfil.tipo !== "tecnico") {
             alert("Acesso restrito a técnicos.");
@@ -146,6 +232,66 @@
         });
     });
 
+    function atualizarSininhoPrazos(vencidas, proximas) {
+        const contadorEl = document.getElementById("sino-contador");
+        const resumoEl = document.getElementById("resumo-prazos");
+        const conteudoEl = document.getElementById("conteudo-prazos");
+
+        const total = vencidas.length + proximas.length;
+        contadorEl.textContent = total;
+        contadorEl.classList.toggle("ativo", total > 0);
+        resumoEl.textContent = `${vencidas.length} vencida(s) · ${proximas.length} próxima(s)`;
+
+        if (total === 0) {
+            conteudoEl.innerHTML = `<p style="color: #8695A7; font-size: 0.82rem; margin: 0;">Nenhuma demanda vencida ou próxima de vencer.</p>`;
+            return;
+        }
+
+        const htmlVencidas = vencidas.length
+            ? vencidas.map(d => `
+                <div class="item-prazo atrasada" data-target-id="demanda-${d.id}">
+                    <div class="item-prazo-titulo">#${d.ticketId || '0000'} — ${d.titulo || 'Sem título'}</div>
+                    <div class="item-prazo-meta">Demanda atrasada · Prazo: ${d.prazoEstimado}</div>
+                </div>
+              `).join("")
+            : `<div style="color: #8695A7; font-size: 0.78rem;">Nenhuma demanda vencida.</div>`;
+
+        const htmlProximas = proximas.length
+            ? proximas.map(d => `
+                <div class="item-prazo proxima" data-target-id="demanda-${d.id}">
+                    <div class="item-prazo-titulo">#${d.ticketId || '0000'} — ${d.titulo || 'Sem título'}</div>
+                    <div class="item-prazo-meta">Próxima de vencer · Prazo: ${d.prazoEstimado}</div>
+                </div>
+              `).join("")
+            : `<div style="color: #8695A7; font-size: 0.78rem;">Nenhuma demanda próxima de vencer.</div>`;
+
+        conteudoEl.innerHTML = `
+            <div class="grupo-prazo">
+                <div class="grupo-prazo-titulo titulo-atrasada">Vencidas (${vencidas.length})</div>
+                ${htmlVencidas}
+            </div>
+            <div class="grupo-prazo">
+                <div class="grupo-prazo-titulo titulo-proxima">Próximas de vencer (${proximas.length})</div>
+                ${htmlProximas}
+            </div>
+        `;
+
+        conteudoEl.querySelectorAll(".item-prazo").forEach(item => {
+            item.addEventListener("click", () => {
+                const targetId = item.getAttribute("data-target-id");
+                const cardAlvo = document.getElementById(targetId);
+                document.getElementById("dropdown-prazos").classList.remove("aberto");
+                document.getElementById("btn-sino-prazos").setAttribute("aria-expanded", "false");
+
+                if (cardAlvo) {
+                    cardAlvo.scrollIntoView({ behavior: "smooth", block: "center" });
+                    cardAlvo.classList.add("destaque-foco");
+                    setTimeout(() => cardAlvo.classList.remove("destaque-foco"), 1600);
+                }
+            });
+        });
+    }
+
     function renderizarAgenda(todosChamados) {
         const listaDiv = document.getElementById("lista-minhas-demandas");
         listaDiv.innerHTML = "";
@@ -155,23 +301,46 @@
         document.getElementById("num-pendentes").textContent = ativos;
 
         if (minhasDemandas.length === 0) {
+            atualizarSininhoPrazos([], []);
             listaDiv.innerHTML = "<p style='color: #8695A7; text-align: center; padding: 30px;'>Você ainda não assumiu nenhum chamado.</p>";
             return;
         }
 
+        const demandasVencidas = [];
+        const demandasProximas = [];
+
+        minhasDemandas.forEach(c => {
+            const situacao = obterSituacaoPrazo(c);
+            if (situacao === "atrasada") demandasVencidas.push(c);
+            if (situacao === "proxima") demandasProximas.push(c);
+        });
+
+        atualizarSininhoPrazos(demandasVencidas, demandasProximas);
+
         minhasDemandas.sort((a, b) => {
             if (a.status === "resolvido" && b.status !== "resolvido") return 1;
             if (a.status !== "resolvido" && b.status === "resolvido") return -1;
-            return 0;
+            const aAtrasada = obterSituacaoPrazo(a) === "atrasada" ? 0 : 1;
+            const bAtrasada = obterSituacaoPrazo(b) === "atrasada" ? 0 : 1;
+            return aAtrasada - bAtrasada;
         });
 
         minhasDemandas.forEach(chamado => {
-            const div = document.createElement("div");
-            div.className = "chamado-card";
+            const situacaoPrazo = obterSituacaoPrazo(chamado);
+            const estaAtrasada = situacaoPrazo === "atrasada";
 
-            let infoPrazo = chamado.prazoEstimado 
-                ? `<div style="font-size: 0.9rem; color: #F6AD55; margin: 10px 0; background: rgba(246, 173, 85, 0.1); border: 1px solid rgba(246, 173, 85, 0.3); padding: 8px 12px; border-radius: 6px; display: inline-block;"><i class="fas fa-calendar-check"></i> Previsão de Entrega: <strong>${chamado.prazoEstimado}</strong></div>` 
-                : "";
+            const div = document.createElement("div");
+            div.id = `demanda-${chamado.id}`;
+            div.className = estaAtrasada ? "chamado-card demanda-atrasada" : "chamado-card";
+
+            let infoPrazo = "";
+            if (chamado.prazoEstimado) {
+                if (estaAtrasada) {
+                    infoPrazo = `<div class="info-prazo-atrasado"><i class="fas fa-exclamation-triangle"></i> Demanda atrasada — Previsão era: <strong>${chamado.prazoEstimado}</strong></div>`;
+                } else {
+                    infoPrazo = `<div class="info-prazo-padrao"><i class="fas fa-calendar-check"></i> Previsão de Entrega: <strong>${chamado.prazoEstimado}</strong></div>`;
+                }
+            }
 
             // Exibe a avaliação do cliente se já foi concluído
             let infoAvaliacaoCliente = chamado.avaliacaoCliente 
@@ -189,11 +358,15 @@
 
             const statusLabel = LABEL_STATUS[chamado.status] || chamado.status;
             const catLabel = LABEL_CATEGORIA[chamado.categoria] || chamado.categoria;
+            const seloAtrasada = estaAtrasada ? `<span class="badge-atrasada">Demanda atrasada</span>` : "";
 
             div.innerHTML = `
                 <div class="ticket-header">
                     <span style="font-weight: bold; color: #8695A7; font-size: 0.9rem;">#${chamado.ticketId || '0000'} • Cliente: ${chamado.clienteNome || 'Desconhecido'}</span>
-                    <span class="badge status-${chamado.status}">${statusLabel}</span>
+                    <div class="header-badges">
+                        ${seloAtrasada}
+                        <span class="badge status-${chamado.status}">${statusLabel}</span>
+                    </div>
                 </div>
                 <h3 style="margin: 5px 0 8px 0; color: #FFFFFF;">${chamado.titulo || 'Sem título'}</h3>
                 <p style="color: #A0AAB5; font-size: 0.9rem; margin-bottom: 10px;">${chamado.descricao || ''}</p>
@@ -229,6 +402,24 @@
             });
         });
     }
+
+    // Abrir / fechar menu do sininho de prazos
+    const btnSinoPrazos = document.getElementById("btn-sino-prazos");
+    const dropdownPrazos = document.getElementById("dropdown-prazos");
+
+    btnSinoPrazos.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const vaiAbrir = !dropdownPrazos.classList.contains("aberto");
+        dropdownPrazos.classList.toggle("aberto", vaiAbrir);
+        btnSinoPrazos.setAttribute("aria-expanded", String(vaiAbrir));
+    });
+
+    document.addEventListener("click", (e) => {
+        if (!dropdownPrazos.contains(e.target) && !btnSinoPrazos.contains(e.target)) {
+            dropdownPrazos.classList.remove("aberto");
+            btnSinoPrazos.setAttribute("aria-expanded", "false");
+        }
+    });
 
     // Controle interativo das estrelas
     const estrelas = document.querySelectorAll("#estrelas-container i");

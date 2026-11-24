@@ -80,11 +80,11 @@
   <h2 id="titulo-feed" style="color: #FFFFFF;">Mural de Chamados Abertos</h2>
   
   <div class="filtros-container" id="filtros-container">
-      <button class="btn-filtro active" data-cat="todos">Todos</button>
-      <button class="btn-filtro" data-cat="hardware"><i class="fas fa-desktop"></i> Hardware</button>
-      <button class="btn-filtro" data-cat="software"><i class="fas fa-code"></i> Software</button>
-      <button class="btn-filtro" data-cat="presencial"><i class="fas fa-map-marker-alt"></i> Presencial</button>
-      <button class="btn-filtro" data-cat="remoto"><i class="fas fa-laptop"></i> Remoto</button>
+      <button type="button" class="btn-filtro active" data-cat="todos">Todos</button>
+      <button type="button" class="btn-filtro" data-cat="hardware"><i class="fas fa-desktop"></i> Hardware</button>
+      <button type="button" class="btn-filtro" data-cat="software"><i class="fas fa-code"></i> Software</button>
+      <button type="button" class="btn-filtro" data-cat="presencial"><i class="fas fa-map-marker-alt"></i> Presencial</button>
+      <button type="button" class="btn-filtro" data-cat="remoto"><i class="fas fa-laptop"></i> Remoto</button>
   </div>
 
   <div id="lista-chamados">
@@ -123,10 +123,17 @@
     let meuPerfil = null;
     let meuId = null;
     let todosChamados = []; 
-    let filtroAtual = "todos"; 
+    const filtrosSelecionados = new Set(["todos"]);
     let editandoId = null; 
     let demandaParaAssumirId = null;
     let coordChamado = null;
+
+    function atualizarEstadoBotoesFiltro() {
+        document.querySelectorAll(".btn-filtro").forEach(btn => {
+            const cat = btn.getAttribute("data-cat");
+            btn.classList.toggle("active", filtrosSelecionados.has(cat));
+        });
+    }
 
     exigirLogin((user, perfil) => {
         meuPerfil = perfil;
@@ -145,9 +152,24 @@
 
         document.querySelectorAll(".btn-filtro").forEach(btn => {
             btn.addEventListener("click", (e) => {
-                document.querySelectorAll(".btn-filtro").forEach(b => b.classList.remove("active"));
-                e.currentTarget.classList.add("active");
-                filtroAtual = e.currentTarget.getAttribute("data-cat");
+                const cat = e.currentTarget.getAttribute("data-cat");
+
+                if (cat === "todos") {
+                    filtrosSelecionados.clear();
+                    filtrosSelecionados.add("todos");
+                } else {
+                    filtrosSelecionados.delete("todos");
+                    if (filtrosSelecionados.has(cat)) {
+                        filtrosSelecionados.delete(cat);
+                    } else {
+                        filtrosSelecionados.add(cat);
+                    }
+                    if (filtrosSelecionados.size === 0) {
+                        filtrosSelecionados.add("todos");
+                    }
+                }
+
+                atualizarEstadoBotoesFiltro();
                 renderizarChamados();
             });
         });
@@ -235,10 +257,19 @@
             chamadosFiltrados = todosChamados.filter(c => c.status === "aberto" || c.tecnicoId === meuId);
         }
 
-        if (filtroAtual === "hardware" || filtroAtual === "software") {
-            chamadosFiltrados = chamadosFiltrados.filter(c => c.categoria === filtroAtual);
-        } else if (filtroAtual === "presencial" || filtroAtual === "remoto") {
-            chamadosFiltrados = chamadosFiltrados.filter(c => (c.modalidade || "remoto") === filtroAtual);
+        if (!filtrosSelecionados.has("todos")) {
+            const categoriasMarcadas = ["hardware", "software"].filter(cat => filtrosSelecionados.has(cat));
+            const modalidadesMarcadas = ["presencial", "remoto"].filter(mod => filtrosSelecionados.has(mod));
+
+            chamadosFiltrados = chamadosFiltrados.filter(c => {
+                const catChamado = (c.categoria || "").toLowerCase();
+                const modChamado = (c.modalidade || "remoto").toLowerCase();
+
+                const atendeCategoria = categoriasMarcadas.length === 0 || categoriasMarcadas.includes(catChamado);
+                const atendeModalidade = modalidadesMarcadas.length === 0 || modalidadesMarcadas.includes(modChamado);
+
+                return atendeCategoria && atendeModalidade;
+            });
         }
 
         if (chamadosFiltrados.length === 0) {

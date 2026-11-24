@@ -15,6 +15,10 @@
     .form-group label { display: block; font-size: 0.85rem; color: #8695A7; margin-bottom: 6px; }
     .form-group input, .form-group select { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid #263340; background: #263340; color: #FFFFFF; font-size: 0.95rem; box-sizing: border-box; }
     .form-group input:focus { outline: none; border-color: #4FD1C5; }
+    .senha-wrapper { position: relative; display: flex; align-items: center; }
+    .senha-wrapper input { padding-right: 42px; }
+    .btn-toggle-senha { position: absolute; right: 10px; background: transparent; border: none; color: #8695A7; cursor: pointer; padding: 6px; display: flex; align-items: center; justify-content: center; font-size: 1rem; transition: color 0.2s; }
+    .btn-toggle-senha:hover { color: #4FD1C5; }
     .esqueci-wrap { text-align: right; margin-top: -8px; margin-bottom: 15px; }
     .esqueci-wrap a { color: #4FD1C5; font-size: 0.82rem; text-decoration: none; }
     .esqueci-wrap a:hover { text-decoration: underline; }
@@ -48,7 +52,12 @@
 
         <div class="form-group">
             <label for="senha">Senha</label>
-            <input type="password" id="senha" placeholder="••••••••" required>
+            <div class="senha-wrapper">
+                <input type="password" id="senha" placeholder="••••••••" required>
+                <button type="button" id="toggle-senha" class="btn-toggle-senha" aria-label="Mostrar senha">
+                    <i class="fas fa-eye"></i>
+                </button>
+            </div>
         </div>
 
         <div class="esqueci-wrap">
@@ -84,6 +93,20 @@
 
     const erroDiv = document.getElementById("mensagem-erro");
     const sucessoDiv = document.getElementById("mensagem-sucesso");
+
+    // Mostrar / ocultar senha
+    const inputSenha = document.getElementById("senha");
+    const btnToggleSenha = document.getElementById("toggle-senha");
+
+    btnToggleSenha.addEventListener("click", () => {
+        const isPassword = inputSenha.type === "password";
+        inputSenha.type = isPassword ? "text" : "password";
+
+        const icone = btnToggleSenha.querySelector("i");
+        icone.classList.toggle("fa-eye", !isPassword);
+        icone.classList.toggle("fa-eye-slash", isPassword);
+        btnToggleSenha.setAttribute("aria-label", isPassword ? "Ocultar senha" : "Mostrar senha");
+    });
 
     function limparMensagens() {
         erroDiv.style.display = "none";
