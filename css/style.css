@@ -66,8 +66,13 @@ button, input, select, textarea { font-family: inherit; font-size: 1rem; }
   align-items: center;
   gap: 8px;
 }
-.topbar .logo .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
-.topbar .user-info { display: flex; align-items: center; gap: 14px; font-size: 0.9rem; color: var(--text-dim); }
+.topbar a.logo {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.topbar a.logo:hover {
+  opacity: 0.8;
+}
 .badge-tipo {
   font-family: var(--font-mono);
   font-size: 0.7rem;

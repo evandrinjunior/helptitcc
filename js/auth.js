@@ -5,6 +5,7 @@ import {
     createUserWithEmailAndPassword,
     GoogleAuthProvider,
     signInWithPopup,
+    sendPasswordResetEmail,
     signOut 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -51,17 +52,30 @@ export async function cadastrarUsuario(nome, email, senha, tipo) {
     const user = credencial.user;
 
     try {
-        await setDoc(doc(db, "usuarios", user.uid), {
-            nome: nome,
-            email: email,
-            tipo: tipo,
-            dataCriacao: new Date().toISOString()
-        });
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Timeout Firestore")), 2500)
+        );
+        await Promise.race([
+            setDoc(doc(db, "usuarios", user.uid), {
+                nome: nome,
+                email: email,
+                tipo: tipo,
+                dataCriacao: new Date().toISOString()
+            }),
+            timeoutPromise
+        ]);
     } catch (err) {
         console.warn("Aviso ao salvar perfil no cadastro:", err);
     }
 
     return user;
+}
+
+export async function recuperarSenha(email) {
+    if (!email) {
+        throw new Error("Informe seu e-mail no campo acima para receber o link de redefinição.");
+    }
+    await sendPasswordResetEmail(auth, email);
 }
 
 export function exigirLogin(callback) {
@@ -116,5 +130,5 @@ export async function fazerLogout() {
     await signOut(auth);
 }
 
-export { logarComGoogle as loginComGoogle };
+export { logarComGoogle as loginComGoogle };    
 export { logarUsuario as loginUsuario };

@@ -26,6 +26,16 @@
     .btn-geo { background: #4FD1C5; color: #17212B; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 6px; }
     .btn-geo:hover { opacity: 0.9; }
 
+    .relatorio-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px; }
+    .relatorio-kpi { background: #263340; border: 1px solid #324252; border-radius: 6px; padding: 12px; text-align: center; }
+    .relatorio-kpi .kpi-valor { font-size: 1.35rem; font-weight: bold; color: #FFFFFF; }
+    .relatorio-kpi .kpi-label { font-size: 0.78rem; color: #8695A7; margin-top: 2px; }
+
+    .filtro-rel-btn { background: #263340; color: #FFFFFF; border: 1px solid #324252; padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; cursor: pointer; transition: 0.2s; }
+    .filtro-rel-btn.ativo { background: #4FD1C5; color: #17212B; border-color: #4FD1C5; font-weight: bold; }
+
+    .rel-item { background: #263340; border: 1px solid #324252; border-radius: 6px; padding: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+
     .btn-sair { background: #FF4757; color: white; border: none; padding: 12px; border-radius: 6px; width: 100%; font-weight: bold; cursor: pointer; transition: 0.2s; font-size: 1rem; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
     .btn-sair:hover { opacity: 0.9; }
 </style>
@@ -33,7 +43,7 @@
 <body>
 
 <div class="topbar" style="background: #1C2733; padding: 15px 30px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #263340;">
-  <div class="logo" style="font-weight: bold; color: #4FD1C5; font-size: 1.5rem;"><span class="dot"></span> HelpTI Perfil</div>
+  <a href="feed.html" class="logo" style="font-weight: bold; color: #4FD1C5; font-size: 1.5rem; text-decoration: none;"><span class="dot"></span> HelpTI Técnico</a>
   <div class="user-info">
     <span id="topbar-nome" style="font-weight: bold; color: #4FD1C5;">Carregando...</span>
   </div>
@@ -78,6 +88,45 @@
       </div>
   </div>
 
+  <!-- Seção Exclusiva de Relatório do Técnico -->
+  <div id="secao-relatorio-tecnico" style="display: none; background: #1C2733; border: 1px solid #263340; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
+          <h3 style="margin: 0; font-size: 1.1rem; color: #4FD1C5;">
+              <i class="fas fa-chart-bar"></i> Relatório de Atendimentos
+          </h3>
+          <button type="button" id="btn-exportar-csv" style="background: #263340; color: #4FD1C5; border: 1px solid #4FD1C5; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer;">
+              <i class="fas fa-file-csv"></i> Exportar CSV
+          </button>
+      </div>
+
+      <div class="relatorio-grid">
+          <div class="relatorio-kpi">
+              <div class="kpi-valor" id="rel-total">0</div>
+              <div class="kpi-label">Total Assumidos</div>
+          </div>
+          <div class="relatorio-kpi">
+              <div class="kpi-valor" id="rel-concluidos" style="color: #68D391;">0</div>
+              <div class="kpi-label">Concluídos</div>
+          </div>
+          <div class="relatorio-kpi">
+              <div class="kpi-valor" id="rel-andamento" style="color: #4FD1C5;">0</div>
+              <div class="kpi-label">Em Andamento</div>
+          </div>
+          <div class="relatorio-kpi">
+              <div class="kpi-valor" id="rel-taxa" style="color: #FFD700;">0%</div>
+              <div class="kpi-label">Taxa de Conclusão</div>
+          </div>
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+          <button type="button" class="filtro-rel-btn ativo" data-filtro="todos">Todos</button>
+          <button type="button" class="filtro-rel-btn" data-filtro="andamento">Em andamento</button>
+          <button type="button" class="filtro-rel-btn" data-filtro="resolvido">Concluídos</button>
+      </div>
+
+      <div id="rel-lista-chamados" style="display: flex; flex-direction: column; gap: 8px;"></div>
+  </div>
+
   <button type="button" id="btn-logout" class="btn-sair">
       <i class="fas fa-sign-out-alt"></i> Sair da Conta
   </button>
@@ -102,6 +151,85 @@
     import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     let meuId = null;
+    let chamadosDoTecnico = [];
+    let filtroRelatorio = "todos";
+
+    function renderizarRelatorioTecnico() {
+        const total = chamadosDoTecnico.length;
+        const concluidos = chamadosDoTecnico.filter(c => c.status === "resolvido").length;
+        const andamento = chamadosDoTecnico.filter(c => c.status !== "resolvido").length;
+        const taxa = total > 0 ? Math.round((concluidos / total) * 100) : 0;
+
+        document.getElementById("rel-total").textContent = total;
+        document.getElementById("rel-concluidos").textContent = concluidos;
+        document.getElementById("rel-andamento").textContent = andamento;
+        document.getElementById("rel-taxa").textContent = `${taxa}%`;
+
+        const filtrados = chamadosDoTecnico.filter(c => {
+            if (filtroRelatorio === "resolvido") return c.status === "resolvido";
+            if (filtroRelatorio === "andamento") return c.status !== "resolvido";
+            return true;
+        });
+
+        const listaEl = document.getElementById("rel-lista-chamados");
+        if (filtrados.length === 0) {
+            listaEl.innerHTML = `<p style="color: #8695A7; font-size: 0.85rem; margin: 5px 0;">Nenhum chamado encontrado neste filtro.</p>`;
+            return;
+        }
+
+        listaEl.innerHTML = filtrados.map(c => {
+            const encerrado = c.status === "resolvido";
+            const statusTexto = encerrado ? "Concluído" : "Em andamento";
+            const statusCor = encerrado ? "#68D391" : "#4FD1C5";
+            const notaTexto = c.avaliacao ? ` • ⭐ ${c.avaliacao}/5` : "";
+            const cidadeTexto = c.cidade ? ` • ${c.cidade}` : "";
+
+            return `
+                <div class="rel-item" style="cursor: pointer;" onclick="window.location.href='chat.html?id=${c.id}'">
+                    <div>
+                        <div style="font-weight: bold; font-size: 0.92rem; color: #FFFFFF;">${c.titulo || "Atendimento"}</div>
+                        <div style="font-size: 0.8rem; color: #8695A7; margin-top: 3px;">
+                            Cliente: ${c.clienteNome || "Cliente"}${cidadeTexto}${notaTexto}
+                        </div>
+                    </div>
+                    <span style="font-size: 0.75rem; font-weight: bold; color: ${statusCor}; background: #17212B; padding: 4px 8px; border-radius: 4px; white-space: nowrap;">
+                        ${statusTexto}
+                    </span>
+                </div>
+            `;
+        }).join("");
+    }
+
+    document.querySelectorAll(".filtro-rel-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            filtroRelatorio = btn.getAttribute("data-filtro");
+            document.querySelectorAll(".filtro-rel-btn").forEach(b => b.classList.remove("ativo"));
+            btn.classList.add("ativo");
+            renderizarRelatorioTecnico();
+        });
+    });
+
+    document.getElementById("btn-exportar-csv").addEventListener("click", () => {
+        const linhas = [
+            ["ID", "Titulo", "Cliente", "Cidade", "Status", "Avaliacao"],
+            ...chamadosDoTecnico.map(c => [
+                c.id || "",
+                `"${(c.titulo || "").replace(/"/g, '""')}"`,
+                `"${(c.clienteNome || "").replace(/"/g, '""')}"`,
+                `"${(c.cidade || "").replace(/"/g, '""')}"`,
+                c.status === "resolvido" ? "Concluido" : "Em andamento",
+                c.avaliacao ?? "Sem avaliacao"
+            ])
+        ];
+        const csv = linhas.map(l => l.join(";")).join("\n");
+        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "relatorio-tecnico-helpti.csv";
+        link.click();
+        URL.revokeObjectURL(url);
+    });
 
     exigirLogin(async (user, perfil) => {
         meuId = user.uid;
@@ -131,6 +259,7 @@
         if (perfil.tipo === "tecnico") {
             const navDemandas = document.getElementById("nav-demandas");
             if(navDemandas) navDemandas.style.display = "flex";
+            document.getElementById("secao-relatorio-tecnico").style.display = "block";
         }
 
         escutarDemandas((chamados) => {
@@ -149,15 +278,15 @@
                     }
                 });
             } else {
-                chamados.forEach(c => {
-                    if (c.tecnicoId === meuId) {
-                        countAtendimentos++;
-                        if (c.avaliacao) {
-                            somaNotas += Number(c.avaliacao);
-                            totalAvaliacoes++;
-                        }
+                chamadosDoTecnico = chamados.filter(c => c.tecnicoId === meuId);
+                chamadosDoTecnico.forEach(c => {
+                    countAtendimentos++;
+                    if (c.avaliacao) {
+                        somaNotas += Number(c.avaliacao);
+                        totalAvaliacoes++;
                     }
                 });
+                renderizarRelatorioTecnico();
             }
 
             const blocoTotal = document.getElementById("bloco-total-atendimentos");
@@ -231,7 +360,7 @@
         if (confirm("Deseja realmente sair da sua conta?")) {
             try {
                 await fazerLogout();
-                window.location.href = "index.html";
+                window.location.href = "login.html";
             } catch (err) {
                 alert("Erro ao sair: " + err.message);
             }

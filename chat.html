@@ -48,7 +48,7 @@
 
   <div id="lista-conversas" style="display: none;">
     <h2>Minhas Conversas</h2>
-    <p style="color: #8695A7; margin-bottom: 20px;">Selecione um atendimento para continuar a conversa.</p>
+    <p style="color: #8695A7; margin-bottom: 20px;">Conversas e atendimentos ordenados dos mais recentes.</p>
     <div id="historico-chats"></div>
   </div>
 
@@ -115,8 +115,28 @@
     import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { db } from "./js/firebase-config.js";
 
+    function obterTimestampMs(chat) {
+        const campoData = chat.ultimaAtividade || chat.dataAssumido || chat.dataCriacao || chat.timestamp || chat.criadoEm;
+        if (!campoData) return 0;
+        if (typeof campoData.toMillis === "function") return campoData.toMillis();
+        if (typeof campoData === "number") return campoData;
+        const parsed = Date.parse(campoData);
+        return isNaN(parsed) ? 0 : parsed;
+    }
+
+    function formatarDataCurta(ms) {
+        if (!ms) return "";
+        const data = new Date(ms);
+        const dia = String(data.getDate()).padStart(2, "0");
+        const mes = String(data.getMonth() + 1).padStart(2, "0");
+        const hora = String(data.getHours()).padStart(2, "0");
+        const min = String(data.getMinutes()).padStart(2, "0");
+        return `${dia}/${mes} ${hora}:${min}`;
+    }
+
     exigirLogin((user, perfil) => {
         document.getElementById("loading-chat").style.display = "none";
+        document.getElementById("nome-usuario").textContent = perfil.nome || user.displayName || user.email.split("@")[0];
         if (perfil.tipo === "tecnico") document.getElementById("nav-demandas").style.display = "flex";
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -129,8 +149,10 @@
                 listaDiv.innerHTML = "";
                 let temNotificacaoGeral = false;
 
-                // Mostra todos, exceto os abertos sem dono
-                let meusChats = chamados.filter(c => (c.clienteId === user.uid || c.tecnicoId === user.uid) && c.status !== "aberto");
+                // Filtra e ordena do mais recente para o mais antigo
+                let meusChats = chamados
+                    .filter(c => (c.clienteId === user.uid || c.tecnicoId === user.uid) && c.status !== "aberto")
+                    .sort((a, b) => obterTimestampMs(b) - obterTimestampMs(a));
 
                 if (meusChats.length === 0) {
                     listaDiv.innerHTML = "<p style='color: #8695A7; text-align: center;'>Você não possui conversas no momento.</p>";
@@ -146,7 +168,6 @@
                     const temMensagemNaoLida = (chat.ultimaMensagemDe && chat.ultimaMensagemDe !== user.uid && chat.lida === false);
                     if (temMensagemNaoLida) temNotificacaoGeral = true;
 
-                    // Cálculo rápido da média na lista
                     let mediaTxt = "";
                     if (chat.tecnicoId && perfil.tipo === "cliente") {
                         const av = chamados.filter(c => c.tecnicoId === chat.tecnicoId && c.avaliacao);
@@ -160,14 +181,18 @@
 
                     const nomeContato = perfil.tipo === "cliente" ? ((chat.tecnicoNome || "Técnico") + mediaTxt) : chat.clienteNome;
                     const statusTag = chat.status === "resolvido" ? `<span style="font-size:0.7rem; background:#263340; padding:2px 6px; border-radius:4px; margin-left:5px;">Encerrado</span>` : '';
+                    const dataTexto = formatarDataCurta(obterTimestampMs(chat));
 
                     div.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                            <div style="flex: 1;">
                                 <h3 style="margin: 0 0 5px 0; color: #fff;"><i class="fas fa-user-circle"></i> ${nomeContato} ${statusTag} ${temMensagemNaoLida ? '<span class="bolinha-card"></span>' : ''}</h3>
                                 <p style="color: #A0AAB5; font-size: 0.85rem; margin: 0;">Ref: ${chat.titulo}</p>
                             </div>
-                            <i class="fas fa-chevron-right" style="color: var(--accent);"></i>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                ${dataTexto ? `<span style="font-size: 0.75rem; color: #8695A7; white-space: nowrap;">${dataTexto}</span>` : ""}
+                                <i class="fas fa-chevron-right" style="color: var(--accent);"></i>
+                            </div>
                         </div>
                     `;
                     listaDiv.appendChild(div);
@@ -182,7 +207,6 @@
                 const chamadoAtual = chamados.find(c => c.id === demandaId);
                 if (chamadoAtual) {
                     
-                    // Lógica de cálculo da média na tela principal do chat
                     let mediaTecnico = "";
                     if (chamadoAtual.tecnicoId) {
                         const avaliacoes = chamados.filter(c => c.tecnicoId === chamadoAtual.tecnicoId && c.avaliacao);
@@ -202,7 +226,6 @@
                         await updateDoc(doc(db, "demandas", demandaId), { lida: true });
                     }
 
-                    // CONTROLE DE INTERFACE (Encerrar e Avaliar)
                     const formMensagem = document.getElementById("form-mensagem");
                     const btnFinalizar = document.getElementById("btn-finalizar");
                     const areaAvaliacao = document.getElementById("area-avaliacao");
@@ -217,7 +240,6 @@
                                 areaAvaliacao.style.display = "block";
                                 msgEncerrado.style.display = "none";
                                 
-                                // Lógica de colorir as estrelas e salvar nota
                                 const stars = document.querySelectorAll("#estrelas-container i");
                                 stars.forEach(star => {
                                     star.onclick = async () => {
@@ -239,7 +261,7 @@
                                 msgEncerrado.style.display = "block";
                                 document.getElementById("texto-avaliacao-dada").innerHTML = `Sua avaliação: ${chamadoAtual.avaliacao} <i class="fas fa-star"></i>`;
                             }
-                        } else { // Visão Técnico
+                        } else {
                             areaAvaliacao.style.display = "none";
                             msgEncerrado.style.display = "block";
                             if (chamadoAtual.avaliacao) {
@@ -248,7 +270,7 @@
                                 document.getElementById("texto-avaliacao-dada").innerHTML = "Aguardando avaliação do cliente...";
                             }
                         }
-                    } else { // Chamado Aberto/Em andamento
+                    } else {
                         formMensagem.style.display = "flex";
                         areaAvaliacao.style.display = "none";
                         msgEncerrado.style.display = "none";
@@ -257,7 +279,10 @@
                             btnFinalizar.style.display = "block";
                             btnFinalizar.onclick = async () => {
                                 if(confirm("Deseja realmente encerrar este atendimento? O cliente será convidado a avaliar o serviço.")) {
-                                    await updateDoc(doc(db, "demandas", demandaId), { status: "resolvido" });
+                                    await updateDoc(doc(db, "demandas", demandaId), {
+                                        status: "resolvido",
+                                        ultimaAtividade: serverTimestamp()
+                                    });
                                 }
                             };
                         }
@@ -291,7 +316,11 @@
                 if (texto !== "") {
                     input.value = "";
                     await addDoc(mensagensRef, { texto: texto, remetenteId: user.uid, remetenteNome: perfil.nome, timestamp: serverTimestamp() });
-                    await updateDoc(doc(db, "demandas", demandaId), { ultimaMensagemDe: user.uid, lida: false });
+                    await updateDoc(doc(db, "demandas", demandaId), {
+                        ultimaMensagemDe: user.uid,
+                        lida: false,
+                        ultimaAtividade: serverTimestamp()
+                    });
                 }
             });
         }

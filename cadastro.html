@@ -78,6 +78,7 @@
       const tipo = document.getElementById("tipo-conta").value;
 
       await cadastrarUsuario(nome, email, senha, tipo);
+      window.location.href = "feed.html";
       
     } catch (err) {
       if (erroDiv) erroDiv.textContent = err.message;
