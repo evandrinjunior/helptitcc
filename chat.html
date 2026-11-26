@@ -19,12 +19,17 @@
     .chamado-card { background: var(--surface, #1C2733); border: 1px solid var(--border, #263340); border-radius: 8px; padding: 15px; margin-bottom: 15px; transition: 0.2s; }
     .chamado-card:hover { border-color: var(--accent); }
     
-    .chat-header { background: var(--surface); padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+    .chat-header { background: var(--surface); padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .chat-acoes { display: flex; align-items: center; gap: 8px; }
     .btn-voltar { background: none; border: none; color: var(--accent); font-size: 1.2rem; cursor: pointer; }
+    .btn-recusar { background: transparent; color: #F6AD55; border: 1px solid #F6AD55; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.8rem; transition: 0.2s; }
+    .btn-recusar:hover:not(:disabled) { background: rgba(246, 173, 85, 0.15); }
+    .btn-recusar:disabled { opacity: 0.6; cursor: not-allowed; }
     .chat-mensagens { background: var(--surface-alt); border: 1px solid var(--border); border-radius: 8px; height: 400px; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
     .msg-balao { max-width: 75%; padding: 10px 15px; border-radius: 15px; font-size: 0.9rem; }
     .msg-minha { background: var(--accent); color: #17212B; align-self: flex-end; border-bottom-right-radius: 2px; }
     .msg-outra { background: var(--surface); color: #fff; border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: 2px; }
+    .msg-sistema { max-width: 90%; align-self: center; background: rgba(79, 209, 197, 0.12); color: #A0AAB5; border: 1px dashed var(--border); border-radius: 8px; padding: 8px 14px; font-size: 0.82rem; text-align: center; }
     .chat-input-container { display: flex; gap: 10px; }
     .chat-input-container input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: white; }
     .btn-enviar { background: var(--accent); color: #17212B; border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
@@ -55,12 +60,18 @@
   <div id="sala-chat" style="display: none;">
     <div class="chat-header">
         <button class="btn-voltar" onclick="window.location.href='chat.html'"><i class="fas fa-arrow-left"></i></button>
-        <div style="flex: 1;">
+        <div style="flex: 1; min-width: 180px;">
             <h3 id="chat-titulo" style="margin: 0; font-size: 1.1rem;">Carregando chat...</h3>
             <p id="chat-contato" style="margin: 3px 0 0 0; font-size: 0.85rem; color: #8695A7;">...</p>
         </div>
-        <!-- Botão exclusivo do Técnico -->
-        <button id="btn-finalizar" style="display: none; background: #FF4757; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.8rem;"><i class="fas fa-power-off"></i> Encerrar</button>
+        <div class="chat-acoes">
+            <!-- Botão exclusivo do Cliente para recusar após negociação e devolver ao mural -->
+            <button id="btn-recusar-chamado" type="button" class="btn-recusar" style="display: none;">
+                <i class="fas fa-undo"></i> Recusar Chamado
+            </button>
+            <!-- Botão exclusivo do Técnico -->
+            <button id="btn-finalizar" style="display: none; background: #FF4757; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold; cursor: pointer; font-size: 0.8rem;"><i class="fas fa-power-off"></i> Encerrar</button>
+        </div>
     </div>
     
     <div class="chat-mensagens" id="box-mensagens">
@@ -136,7 +147,8 @@
 
     exigirLogin((user, perfil) => {
         document.getElementById("loading-chat").style.display = "none";
-        document.getElementById("nome-usuario").textContent = perfil.nome || user.displayName || user.email.split("@")[0];
+        const nomeUsuarioAtual = perfil.nome || user.displayName || user.email.split("@")[0];
+        document.getElementById("nome-usuario").textContent = nomeUsuarioAtual;
         if (perfil.tipo === "tecnico") document.getElementById("nav-demandas").style.display = "flex";
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -202,6 +214,7 @@
 
         } else {
             document.getElementById("sala-chat").style.display = "block";
+            const mensagensRef = collection(db, "demandas", demandaId, "mensagens");
             
             escutarDemandas(async (chamados) => {
                 const chamadoAtual = chamados.find(c => c.id === demandaId);
@@ -228,12 +241,14 @@
 
                     const formMensagem = document.getElementById("form-mensagem");
                     const btnFinalizar = document.getElementById("btn-finalizar");
+                    const btnRecusar = document.getElementById("btn-recusar-chamado");
                     const areaAvaliacao = document.getElementById("area-avaliacao");
                     const msgEncerrado = document.getElementById("msg-encerrado");
 
                     if (chamadoAtual.status === "resolvido") {
                         formMensagem.style.display = "none";
                         btnFinalizar.style.display = "none";
+                        btnRecusar.style.display = "none";
                         
                         if (perfil.tipo === "cliente") {
                             if (!chamadoAtual.avaliacao) {
@@ -275,6 +290,43 @@
                         areaAvaliacao.style.display = "none";
                         msgEncerrado.style.display = "none";
 
+                        // Permite que o cliente recuse após a negociação no chat e devolva ao mural
+                        if (perfil.tipo === "cliente" && chamadoAtual.clienteId === user.uid && chamadoAtual.status !== "aberto") {
+                            btnRecusar.style.display = "inline-block";
+                            btnRecusar.onclick = async () => {
+                                if (!confirm("Deseja recusar este atendimento após a negociação? O chamado voltará disponível para o mural.")) {
+                                    return;
+                                }
+
+                                try {
+                                    btnRecusar.disabled = true;
+                                    await addDoc(mensagensRef, {
+                                        tipo: "sistema",
+                                        texto: "O cliente recusou o atendimento após a negociação no chat. O chamado voltou para o mural.",
+                                        remetenteId: user.uid,
+                                        remetenteNome: "Sistema",
+                                        timestamp: serverTimestamp()
+                                    });
+
+                                    await updateDoc(doc(db, "demandas", demandaId), {
+                                        status: "aberto",
+                                        tecnicoId: null,
+                                        tecnicoNome: null,
+                                        lida: true,
+                                        ultimaAtividade: serverTimestamp()
+                                    });
+
+                                    window.location.href = "chat.html";
+                                } catch (erro) {
+                                    console.error("Erro ao recusar chamado:", erro);
+                                    alert("Não foi possível recusar o chamado agora. Tente novamente.");
+                                    btnRecusar.disabled = false;
+                                }
+                            };
+                        } else {
+                            btnRecusar.style.display = "none";
+                        }
+
                         if (perfil.tipo === "tecnico") {
                             btnFinalizar.style.display = "block";
                             btnFinalizar.onclick = async () => {
@@ -291,14 +343,21 @@
             });
 
             const boxMensagens = document.getElementById("box-mensagens");
-            const mensagensRef = collection(db, "demandas", demandaId, "mensagens");
             const q = query(mensagensRef, orderBy("timestamp", "asc"));
 
             onSnapshot(q, (snapshot) => {
                 boxMensagens.innerHTML = "";
-                snapshot.forEach((doc) => {
-                    const msg = doc.data();
+                snapshot.forEach((docSnap) => {
+                    const msg = docSnap.data();
                     const div = document.createElement("div");
+
+                    if (msg.tipo === "sistema") {
+                        div.className = "msg-sistema";
+                        div.innerHTML = `<i class="fas fa-info-circle"></i> ${msg.texto}`;
+                        boxMensagens.appendChild(div);
+                        return;
+                    }
+
                     const ehMinha = msg.remetenteId === user.uid;
                     div.className = `msg-balao ${ehMinha ? 'msg-minha' : 'msg-outra'}`;
                     const nomeLabel = ehMinha ? "" : `<strong style="display: block; font-size: 0.75rem; margin-bottom: 3px; color: var(--accent);">${msg.remetenteNome}</strong>`;
@@ -315,7 +374,7 @@
                 
                 if (texto !== "") {
                     input.value = "";
-                    await addDoc(mensagensRef, { texto: texto, remetenteId: user.uid, remetenteNome: perfil.nome, timestamp: serverTimestamp() });
+                    await addDoc(mensagensRef, { texto: texto, remetenteId: user.uid, remetenteNome: nomeUsuarioAtual, timestamp: serverTimestamp() });
                     await updateDoc(doc(db, "demandas", demandaId), {
                         ultimaMensagemDe: user.uid,
                         lida: false,
