@@ -6,6 +6,8 @@
 <title>Meu Perfil — HelpTI</title>
 <link rel="stylesheet" href="css/style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
     body { padding-bottom: 80px !important; background-color: #17212B !important; color: #FFFFFF !important; font-family: sans-serif; margin: 0; }
     
@@ -94,8 +96,8 @@
           <h3 style="margin: 0; font-size: 1.1rem; color: #4FD1C5;">
               <i class="fas fa-chart-bar"></i> Relatório de Atendimentos
           </h3>
-          <button type="button" id="btn-exportar-csv" style="background: #263340; color: #4FD1C5; border: 1px solid #4FD1C5; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer;">
-              <i class="fas fa-file-csv"></i> Exportar CSV
+          <button type="button" id="btn-exportar-pdf" style="background: #263340; color: #4FD1C5; border: 1px solid #4FD1C5; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold; cursor: pointer;">
+              <i class="fas fa-file-pdf"></i> Exportar PDF
           </button>
       </div>
 
@@ -151,8 +153,17 @@
     import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     let meuId = null;
+    let nomeTecnicoAtual = "Técnico HelpTI";
     let chamadosDoTecnico = [];
     let filtroRelatorio = "todos";
+
+    function obterChamadosFiltrados() {
+        return chamadosDoTecnico.filter(c => {
+            if (filtroRelatorio === "resolvido") return c.status === "resolvido";
+            if (filtroRelatorio === "andamento") return c.status !== "resolvido";
+            return true;
+        });
+    }
 
     function renderizarRelatorioTecnico() {
         const total = chamadosDoTecnico.length;
@@ -165,11 +176,7 @@
         document.getElementById("rel-andamento").textContent = andamento;
         document.getElementById("rel-taxa").textContent = `${taxa}%`;
 
-        const filtrados = chamadosDoTecnico.filter(c => {
-            if (filtroRelatorio === "resolvido") return c.status === "resolvido";
-            if (filtroRelatorio === "andamento") return c.status !== "resolvido";
-            return true;
-        });
+        const filtrados = obterChamadosFiltrados();
 
         const listaEl = document.getElementById("rel-lista-chamados");
         if (filtrados.length === 0) {
@@ -209,30 +216,67 @@
         });
     });
 
-    document.getElementById("btn-exportar-csv").addEventListener("click", () => {
-        const linhas = [
-            ["ID", "Titulo", "Cliente", "Cidade", "Status", "Avaliacao"],
-            ...chamadosDoTecnico.map(c => [
-                c.id || "",
-                `"${(c.titulo || "").replace(/"/g, '""')}"`,
-                `"${(c.clienteNome || "").replace(/"/g, '""')}"`,
-                `"${(c.cidade || "").replace(/"/g, '""')}"`,
-                c.status === "resolvido" ? "Concluido" : "Em andamento",
-                c.avaliacao ?? "Sem avaliacao"
-            ])
-        ];
-        const csv = linhas.map(l => l.join(";")).join("\n");
-        const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = "relatorio-tecnico-helpti.csv";
-        link.click();
-        URL.revokeObjectURL(url);
+    document.getElementById("btn-exportar-pdf").addEventListener("click", () => {
+        const filtrados = obterChamadosFiltrados();
+        if (!filtrados.length) {
+            alert("Não há atendimentos no filtro atual para exportar em PDF.");
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const docPdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+
+        const total = chamadosDoTecnico.length;
+        const concluidos = chamadosDoTecnico.filter(c => c.status === "resolvido").length;
+        const andamento = chamadosDoTecnico.filter(c => c.status !== "resolvido").length;
+        const taxa = total > 0 ? Math.round((concluidos / total) * 100) : 0;
+
+        const rotuloFiltro =
+            filtroRelatorio === "resolvido"
+                ? "Concluídos"
+                : filtroRelatorio === "andamento"
+                ? "Em andamento"
+                : "Todos";
+
+        docPdf.setFontSize(16);
+        docPdf.setTextColor(23, 33, 43);
+        docPdf.text("Relatório de Atendimentos — HelpTI", 14, 18);
+
+        docPdf.setFontSize(10);
+        docPdf.setTextColor(75, 85, 99);
+        docPdf.text(`Técnico: ${nomeTecnicoAtual}`, 14, 26);
+        docPdf.text(`Data de emissão: ${new Date().toLocaleDateString("pt-BR")}   |   Filtro: ${rotuloFiltro}`, 14, 32);
+        docPdf.text(
+            `Total Assumidos: ${total}   |   Concluídos: ${concluidos}   |   Em Andamento: ${andamento}   |   Taxa: ${taxa}%`,
+            14,
+            38
+        );
+
+        const linhas = filtrados.map(c => [
+            c.ticketId ? `#${c.ticketId}` : (c.id || "-"),
+            c.titulo || "Atendimento",
+            c.clienteNome || "Cliente",
+            c.cidade || "-",
+            c.status === "resolvido" ? "Concluído" : "Em andamento",
+            c.avaliacao ? `${c.avaliacao}/5` : "Sem avaliação"
+        ]);
+
+        docPdf.autoTable({
+            startY: 44,
+            head: [["Ref.", "Chamado", "Cliente", "Cidade", "Status", "Avaliação"]],
+            body: linhas,
+            theme: "grid",
+            styles: { fontSize: 8.5, cellPadding: 2.5 },
+            headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: "bold" }
+        });
+
+        const dataArquivo = new Date().toISOString().slice(0, 10);
+        docPdf.save(`relatorio-tecnico-helpti-${dataArquivo}.pdf`);
     });
 
     exigirLogin(async (user, perfil) => {
         meuId = user.uid;
+        nomeTecnicoAtual = perfil.nome || "Técnico HelpTI";
 
         document.getElementById("topbar-nome").textContent = perfil.nome;
         document.getElementById("perfil-nome").textContent = perfil.nome;
